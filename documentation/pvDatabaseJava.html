@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>pvDatabaseJava</title>
+  <link rel="stylesheet" type="text/css"
+  href="http://epics-pvdata.sourceforge.net/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="http://epics-pvdata.sourceforge.net/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="http://epics-pvdata.sourceforge.net/script/tocgen.js">
+ </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>pvDatabaseJava</h1>
+<!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date. -->
+
+<h2 class="nocount">EPICS v4 Working Group, Working Draft, 26-Jan-2015</h2>
+<dl>
+    <dt>Latest version:</dt>
+    <dd><a
+       href="pvDatabaseJava.html">pvDatabaseJava.html</a>
+    </dd>
+    <dt>This version:</dt>
+    <dd><a
+       href= "pvDatabaseJava_20150126.html">pvDatabaseJava20150126.html
+    </a> </dd>
+    <dt>Previous version:</dt>
+    <dd>None</dd>
+  <dt>Editors:</dt>
+    <dd>Marty Kraimer, BNL</dd>
+</dl>
+
+  <p class="copyright">This product is made available subject to acceptance of the <a
+href="http://epics-pvdata.sourceforge.net/LICENSE.html">EPICS open source license.</a></p>
+<hr />
+
+<h2 class="nocount">Abstract</h2>
+
+<p>This document describes pvDatabaseJava,
+which is a framework for implementing a network accessible database of smart memory resident
+records. Network access is via pvAccess. The data in each record is a top level PVStructure as defined by
+pvData. The framework includes a complete implementation of ChannelProvider as defined by pvAccess.
+The framework can be extended in order to create record instances that implements services.
+The minimum that an extension must provide is a top level PVStructure and a process method.
+</p>
+
+<p>EPICS version 4 is a set of related products in the EPICS
+V4 control system programming environment:<br />
+<a href="http://epics-pvdata.sourceforge.net/relatedDocumentsV4.html">relatedDocumentsV4.html</a>
+</p>
+
+
+<h2 class="nocount">Status of this Document</h2>
+
+<p>This is the 26-Jan-2015 version of of pvDatabaseJava.</p>
+<p>This version is a complete implementation of what is described in this manual.
+This manual needs lots of work.
+</p>
+<p>The following will be done next:</p>
+<dl>
+  <dt>Connection Management</dt>
+    <dd>Look carefully at threading and object management issues.</dd>
+  <dt>Robust Test</dt>
+     <dd>Develop a test where multiple clients connect and disconnect
+     repeatedly.</dd>
+  <dt>Array Perforamance</dt>
+     <dd>Implement the arrayPerformance test from pvDatabaseCPP.</dd>
+  <dt>Update pvDatabaseCPP</dt>
+    <dd>pvDatabaseJava is based on pvDatabaseCPP.
+     Development resulted in a better implementation of some components.
+     Similar changes should be made in pbDatabaseCPP.
+    </dd>
+   <dt>pvDatabaseJava.html</dt>
+     <dd>More work on this document.</dd>
+   <dt>Regression Test</dt>
+      <dd>pvDatabase, both Java and CPP, have examples but
+       not thorough regression tests.
+      </dd>
+</dl>
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+
+<h2>Introduction</h2>
+<p>The main purpose of this project to make it easier to implement services that are accessed via pvAccess.
+This project supplies a complete implementation of the server side of pvAccess.
+All that a service has to provide is a top level PVStructure and a process method.
+</p>
+
+<p>A brief description of a pvDatabase is that it is a set of network accessible, smart,
+memory resident records.
+Each record has data composed of a top level PVStructure.
+Each record has a name which is the channelName for pvAccess.
+A local Channel Provider implements the complete ChannelProvider and
+Channel interfaces as defined by pvAccess.
+The local provider provides access to the records in the pvDatabase.
+This local provider is accessed by the remote pvAccess server.
+A record is smart because code can be attached to a record, which is accessed via a method named process.</p>
+
+<p>This document describes components that provide the following features:</p>
+<dl>
+  <dt>pvdatabase</dt>
+     <dd>This encapsulates the concept of a database of memory resident smart records.
+        The two main components are:
+       <dl>
+          <dt>pvRecord</dt>
+             <dd>This encapsulates the concept of a smart record. It can be processed.
+             Changes to field values can be trapped. A record can be locked.</dd>
+          <dt>pvDatabase</dt>
+              <dd>This is a database of pvRecords.
+               Records can be added and removed from a database.</dd>
+       </dl>
+     </dd>
+  <dt>pva</dt>
+     <dd>This is a complete implementation of ChannelProvider and Channel
+       as defined by pvAccess.
+       It is used by the server side of pvAccess to attach to pvRecords.
+       </dd>
+</dl>
+<p>PVRecord is a base class makes it easy to create record instances.
+The code attached to each record must create the top
+level PVStructure and the following methods:</p>
+<dl>
+  <dt>Constructor</dt>
+    <dd>A derived class constructor must call the base class constructor.</dd>
+  <dt>process</dt>
+    <dd>This is what makes a record smart.
+      The base class just looks for a timeStamp field and if it exists
+      it is set equal to the current time.
+     A derived class can do what it wants.
+     </dd>
+  <dt>destroy</dt>
+     <dd>This releases any resources used by the implementation.
+     </dd>
+</dl>
+<p>JavaDoc is available at <a
+href="./html/index.html">javaDoc</a></p>
+<h2>Getting started</h2>
+<p>pvDatabaseJava provides a pom.xml files so that maven can be used to
+build it.
+</p>
+<p>One of the examples is HelloExample
+which can be run a a Java Application via eclipse.</p>
+<pre>
+public class HelloExample {
+	
+    public static void main(String[] args)
+    {
+	    
+       PVDatabase master = PVDatabaseFactory.getMaster();    
+       PVRecord pvRecord = HelloRecord.create("helloExample");
+       pvRecord.setTraceLevel(4);
+       master.addRecord(pvRecord);
+       
+       ChannelProvider channelProvider = ChannelServerFactory.getChannelServer();
+       // Create a context with default configuration values.
+       final ServerContextImpl context = new ServerContextImpl();
+       context.setBeaconServerStatusProvider(
+           new DefaultBeaconServerDataProvider(context));
+       try {
+           context.initialize(channelProvider);
+       } catch (Throwable th) {
+           th.printStackTrace();
+       }
+
+       // Display basic information about the context.
+       System.out.println(context.getVersion().getVersionString());
+       context.printInfo(); System.out.println();
+
+       new Thread(new Runnable() {
+           
+           public void run() {
+               try {
+                   System.out.println("Running server...");
+                   context.run(0);
+                   System.out.println("Done.");
+               } catch (Throwable th) {
+                   System.out.println("Failure:");
+                   th.printStackTrace();
+               }
+           }
+       }, "pvAccess server").start();
+    }
+}
+</pre>
+<p>You should see something like the following:</p>
+<pre>
+pvAccess Server v4.1.0-SNAPSHOT
+CLASS   : org.epics.pvaccess.server.impl.remote.ServerContextImpl
+VERSION : pvAccess Server v4.1.0-SNAPSHOT
+CHANNEL PROVIDER : local
+BEACON_ADDR_LIST : 
+AUTO_BEACON_ADDR_LIST : true
+BEACON_PERIOD : 15.0
+BROADCAST_PORT : 5076
+SERVER_PORT : 5075
+RCV_BUFFER_SIZE : 16384
+IGNORE_ADDR_LIST: 
+STATE : INITIALIZED
+
+Running server...
+</pre>
+<p>Then in another window execute a pvput and pvget as follows:</p>
+<pre>
+mrk&gt; pvput -r "argument.value" helloExample
+...
+mrk&gt; pvget -r "result.value" helloExample
+helloExample
+structure 
+    structure result
+        string value Hello World
+mrk&gt; 
+</pre>
+
+<h2>Guidelines For Developing PVRecords</h2>
+<h3>Static Records</h3>
+<h3>Dynamic Records</h3>
+<h2>org.epics.pvdatabase</h2>
+<p>This Package has the following files:</p>
+<dl>
+   <dt>PVDatabase</dt>
+     <dd>
+      Interface for a pvdatabase.
+     </dd>
+   <dt>PVRecord</dt>
+     <dd>
+       The base class for PVRecord.
+     </dd>
+   <dt>PVDatabaseFactory</dt>
+     <dd>A factory for a pvdatabase.</dd>
+   <dt>PVListener</dt>
+     <dd>Interface for code that listens for changes to fields.</dd>
+   <dt>PVRecordClient</dt>
+     <dd>Interface for code that accesses a PVRecord</dd>
+   <dt>PVRecordField</dt>
+     <dd>Interface that connects a PVField to a PVRecord</dd>
+   <dt>PVRecordStructure</dt>
+     <dd>Interface that connects a PVStructure to a PVRecord</dd>
+</dl>
+
+<h3>PVDatabase</h3>
+<pre>
+public interface PVDatabase {
+    void destroy();
+    PVRecord findRecord(String recordName);
+    boolean addRecord(PVRecord record);
+    boolean removeRecord(PVRecord record);
+    String[] getRecordNames();
+}
+</pre>
+<dl>
+  <dt>destroy</dt>
+    <dd>
+      Called to destroy the database and all records in the database.
+    </dd>
+  <dt>findRecord</dt>
+    <dd>
+     Find the interface for a record instance.
+    A null is returned if the record is not located.
+    </dd>
+  <dt>addRecord</dt>
+    <dd>
+      Add a new record instance.
+      Returns true if the record was added and false if the record was already in the database.
+    </dd>
+  <dt>removeRecord</dt>
+    <dd>
+      Remove a record instance.
+      Returns true if the record was removed and false otherwise.
+    </dd>
+  <dt>getRecordNames</dt>
+    <dd>
+      Get an array of the record names.
+    </dd>
+</dl>
+  
+<p>NOTES:</p>
+<ul>
+    <li>Most clients will access a record via the local channel provider,
+       i. e. via pvAccess.
+        Thus this section is mainly of interest to 
+      the local channel provider and record implementers.</li>
+    <li>Most readers will not care about most of the PVRecord methods.
+       Most of the methods are used by the pvAccess code.
+      Service implementers will mostly be interested in methods init and process.
+      These are described first.
+    </li>
+</ul>
+<h3>PVDatabaseFactory</h3>
+<pre>
+public class PVDatabaseFactory {
+    public static synchronized PVDatabase getMaster();
+}
+</pre>
+<dl>
+  <dt>getMaster</dt>
+    <dd>At the present time only one database, called master,
+    is supported. This methods returns the single instance of master.
+    </dd>
+</dl>
+<h3>PVListener, PVRecordClient, PVRecordField, and PVRecordStructure</h3>
+<p>This are used by the local channel provider discussed if the next section.
+It is not of interest to client or service implementers.
+See the JavaDoc
+<a href="./html/index.html">javaDoc</a>
+for details.
+</p>
+<h3>Minimum Features Required for pvRecord</h3>
+<p>The first phase will only implement record processing, i. e.
+the process method has to do everything itself without any generic field support.
+This will be sufficient for implementing many services.
+The following are the minimum features required</p>
+<dl>
+  <dt>PVDatabase</dt>
+      <dd>This holds a set of PVRecords.
+         It has methods to find, add, and remove records.</dd>
+  <dt>PVRecord</dt>
+     <dd>This, and a set of related interfaces, provides the following:
+        <dl>
+           <dt>Access to top level PVStructure</dt>
+             <dd>PVRecord is a wrapper on a top level pvStructure.</dd>
+           <dt>Record locking</dt>
+              <dd>A record can be locked and unlocked.
+              A record must be locked whenever data in the pvStructure is accessed.
+               </dd>
+           <dt>Trapping data changes</dt>
+             <dd>A client can request to be notified when data in the pvStructure
+              is modified.
+             It can do this on a field by field basis.</dd>
+        </dl>
+     </dd>
+</dl>
+<p>The following sections describes the classes required for the first phase.</p>
+<h2>org.epics.pvdatabase.pva</h2>
+<p>This is code that provides an implementation of channelProvider as
+defined by pvAccess.
+It provides access to PVRecords and is accessed by the server side of remote pvAccess.
+It uses the copy and monitor facilities from pvDataJava and connects
+them to a PVRecord.
+</p>
+<p>The implementation is a complete implementation of channelProvider
+and channel except for channelRPC, which is implement by pvAccess as a separate
+channel provider.</p>
+<p>
+It is not of interest to client or service implementers.
+See the JavaDoc
+<a href="./html/index.html">javaDoc</a>
+for details.
+</p>
+<h3>Features Required for localChannelProvider</h3>
+<dl>
+   <dt>copy and monitor</dt>
+      <dd>pvDataJava provides facilities copy and monitor.
+         This facilities allow a client to access an arbitrary subset
+          of the fields in the top level structure associated with a channel,
+        and to monitor changes in the top level structure.
+        pvDatabaseJava uses what pvDataJava provides and has code that
+       associates these facilities with a PVRecord.
+       </dd>
+   <dt>PVRecord and PVDatabase</dt>
+      <dd>Defined below.</dd>
+   <dt>The localChannelProvider itself</dt>
+     <dd>
+       The localChannelProvider accesses data from PVRecords.
+     It implements all channel methods except channelRPC,
+      which is implemented by pvAccessJava.
+     </dd>
+</dl>
+
+</div>
+</body>
+</html>
