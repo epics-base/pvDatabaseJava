@@ -31,6 +31,11 @@
             <artifactId>pvAccessJava</artifactId>
             <version>4.1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easyPVAJava</artifactId>
+            <version>4.1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
     
     <distributionManagement>
@@ -116,7 +121,26 @@
                   <skipTests>true</skipTests>
                 </configuration>
              </plugin>
-
+             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.9.1</version>
+                <executions>
+                  <execution>
+                    <id>add-source</id>
+                    <phase>generate-sources</phase>
+                    <goals>
+                      <goal>add-source</goal>
+                    </goals>
+                    <configuration>
+                      <sources>
+                        <source>example</source>
+                        <source>perform</source>
+                      </sources>
+                    </configuration>
+                  </execution>
+                </executions>
+              </plugin>
         </plugins>
     </build>
 

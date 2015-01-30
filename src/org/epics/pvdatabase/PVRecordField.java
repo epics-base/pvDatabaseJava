@@ -8,9 +8,10 @@ package org.epics.pvdatabase;
 import org.epics.pvdata.pv.PVField;
 
 /**
- * PVRecordField is for PVField that are part of a PVRecord.
+ * PVRecordField is for PVField that is part of a PVRecord.
  * Each PVType has an interface that extends PVField.
  * @author mrk
+ * 2015.01.20
  *
  */
 public interface PVRecordField {

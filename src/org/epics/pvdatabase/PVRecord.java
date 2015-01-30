@@ -26,7 +26,7 @@ import org.epics.pvdata.pv.Type;
  * Base class for a pvDatabase PVRecord.
  * Derived classes only need to implement a constructor and optionally process and destroy.
  * @author mrk
- *
+ *  2015.01.20
  */
 public class PVRecord {
 	private static final Convert convert = ConvertFactory.getConvert();
@@ -58,7 +58,7 @@ public class PVRecord {
     	this.recordName = recordName;
     	pvRecordStructure = new BasePVRecordStructure(pvStructure,null,this);
     	PVField pvField = pvRecordStructure.getPVStructure().getSubField("timeStamp");
-    	pvTimeStamp.attach(pvField);
+    	if(pvField!=null) pvTimeStamp.attach(pvField);
     }
     /**
      * Create a PVRecord with a process method that updates a timeStamp field
@@ -71,14 +71,16 @@ public class PVRecord {
         return new PVRecord(recordName,pvStructure);
     }
     /**
-     *  A derived method is expected to override this method.
+     *  A derived method is expected to override this method and can also call this method.
      *  It is the method that makes a record smart.
-     *  The default method does nothing.
-     *  If it encounters errors it should raise alarms and/or
-     *  call the <b>message</b> method provided by the base class.
+     *  If a timeStamp field is present this method sets it equal to the current time.
+     *  If a derived class  encounters errors it should raise alarms
      */
     public void process()
     {
+        if(traceLevel>2) {
+            System.out.println("PVRecord::process() " + recordName);
+        }
         if(pvTimeStamp.isAttached()) {
             timeStamp.getCurrentTime();
             pvTimeStamp.set(timeStamp);
@@ -92,6 +94,9 @@ public class PVRecord {
      */
     public void destroy()
     {
+        if(traceLevel>1) {
+            System.out.println("PVRecord::destroy() " + recordName);
+        }
         pvTimeStamp.detach();
     }
     /**
@@ -242,17 +247,17 @@ public class PVRecord {
         }
     }
     /**
-     * Register a PVListener. This must be called before pvField.addListener.
-     * @param pvListener The listener.
+     * Add a PVListener. This must be called before pvField.addListener.
+     * @param listener The listener.
      */
-    public final boolean addListener(PVListener recordListener) {
+    public final boolean addListener(PVListener listener) {
         if(traceLevel>1) {
             System.out.println("PVRecord::addListener() " + recordName);
         }
         lock.lock();
         try {
-            if(pvAllListenerList.contains(recordListener)) return false;
-            LinkedListNode<PVListener> listNode = listenerListCreate.createNode(recordListener);
+            if(pvAllListenerList.contains(listener)) return false;
+            LinkedListNode<PVListener> listNode = listenerListCreate.createNode(listener);
             pvAllListenerList.addTail(listNode);
             return true;
         } finally {
@@ -260,18 +265,18 @@ public class PVRecord {
         }
     }
     /**
-     * Unregister a PVListener.
-     * @param pvListener The listener.
+     * Remove a PVListener.
+     * @param listener The listener.
      */
-    public final boolean removeListener(PVListener recordListener) {
+    public final boolean removeListener(PVListener listener) {
         if(traceLevel>1) {
             System.out.println("PVRecord::removeListener() " + recordName);
         }
         lock.lock();
         try {
-            if(!pvAllListenerList.contains(recordListener)) return false;
-            pvAllListenerList.remove(recordListener);
-            pvRecordStructure.removeListener(recordListener);
+            if(!pvAllListenerList.contains(listener)) return false;
+            pvAllListenerList.remove(listener);
+            pvRecordStructure.removeListener(listener);
             return true;
         } finally {
             lock.unlock();
@@ -315,13 +320,12 @@ public class PVRecord {
      */
     public final int getTraceLevel(){ return traceLevel;}
     /**
-     * set trace level (0,1) means (lifetime,process)
+     * set trace level (0,1,2) means (nothing,lifetime,process)
      * @param level The level
      */
     public final void setTraceLevel(int level) { traceLevel = level;}
-    /**
-     * Implement standard toString().
-     * @return The record as a String.
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
      */
     public String toString() { return toString(0);}
     /**

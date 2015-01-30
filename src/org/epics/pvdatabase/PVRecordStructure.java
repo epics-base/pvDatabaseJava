@@ -8,7 +8,9 @@ package org.epics.pvdatabase;
 import org.epics.pvdata.pv.PVStructure;
 
 /**
+ * PVRecordStructure is for PVStructure that is part of a PVRecord.
  * @author mrk
+ * 2015.01.20
  *
  */
 public interface PVRecordStructure extends PVRecordField {

@@ -3,7 +3,16 @@
  * EPICS pvData is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution.
  */
+
+
 package org.epics.pvdatabase;
+
+/**
+ * Memory resident database of PVRecords.
+ * @author mrk
+ * 2015.01.20
+ *
+ */
 
 import java.util.LinkedHashMap;
 import java.util.Set;
@@ -13,7 +22,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Factory for PVDatabase.
- * @author mrk
  *
  */
 public class PVDatabaseFactory {

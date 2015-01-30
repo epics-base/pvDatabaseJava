@@ -9,6 +9,7 @@ package org.epics.pvdatabase;
 /**
  * PVRecordClient is implemented by any code that attaches to a record.
  * @author mrk
+ * 2015.01.20
  *
  */
 public interface PVRecordClient {

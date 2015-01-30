@@ -1,0 +1,5 @@
+#! /bin/bash
+source source
+java org.epics.pvdatabase.pva.example.HelloExample \
+    -recordName helloExample \
+    -traceLevel 1

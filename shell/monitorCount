@@ -1,0 +1,7 @@
+#! /bin/bash
+source source
+java org.epics.pvdatabase.perform.MonitorCount \
+    -channelName doubleRecord \
+    -waitSecs .001  \
+    -numberMonitors 100 \
+    -debugLevel 1

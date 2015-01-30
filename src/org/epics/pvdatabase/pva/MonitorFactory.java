@@ -34,7 +34,7 @@ import org.epics.pvdatabase.PVRecordStructure;
 
 /**
  * @author mrk
- *
+ * 2015.01
  */
 public class MonitorFactory {
 	

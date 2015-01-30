@@ -8,18 +8,19 @@ package org.epics.pvdatabase;
 /**
  * DB listener interface.
  * @author mrk
+ * 2015.01.20
  *
  */
 public interface PVListener {
     /**
-     * The data in the dbField has been modified.
-     * @param pvRecordField The data.
+     * The data in the field has been modified.
+     * @param pvRecordField The field.
      */
     void dataPut(PVRecordField pvRecordField);
     /**
      * A put to a subfield has occurred.
      * @param requested The requester is listening to this pvStructure.
-     * @param pvRecordField The data that has been modified.
+     * @param pvRecordField The field that has been modified.
      */
     void dataPut(PVRecordStructure requested,PVRecordField pvRecordField);
     /**

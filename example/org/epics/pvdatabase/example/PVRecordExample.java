@@ -6,10 +6,6 @@
 
 package org.epics.pvdatabase.example;
 
-import org.epics.pvdata.factory.FieldFactory;
-import org.epics.pvdata.factory.PVDataFactory;
-import org.epics.pvdata.pv.FieldCreate;
-import org.epics.pvdata.pv.PVDataCreate;
 import org.epics.pvdata.pv.PVDouble;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdatabase.PVListener;

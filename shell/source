@@ -1,0 +1,11 @@
+# The following assumes that pvData, pvAccess, and javaIOC are eclipse projects in /home/hg
+export WORKSPACE=/home/hg
+export PVDATA=${WORKSPACE}/pvDataJava
+export PVACCESS=${WORKSPACE}/pvAccessJava
+export EASYPVA=${WORKSPACE}/easyPVAJava
+export PVDATABASE=${WORKSPACE}/pvDatabaseJava
+export CLASSPATH=${CLASSPATH}:${PVDATA}/bin
+export CLASSPATH=${CLASSPATH}:${PVACCESS}/bin
+export CLASSPATH=${CLASSPATH}:${EASYPVA}/bin
+export CLASSPATH=${CLASSPATH}:${PVDATABASE}/target/classes
+

@@ -4,6 +4,13 @@
  */
 package org.epics.pvdatabase.pva;
 
+/**
+ * A ChannelProvider for PVDatabase.
+ * @author mrk
+ * 2015.01.20
+ *
+ */
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -71,11 +78,11 @@ import org.epics.pvdatabase.PVRecordClient;
  * @author mrk
  *
  */
-public class ChannelServerFactory  {
+public class ChannelPrividerLocalFactory  {
      
     /**
      * Get the single instance of the local channelProvider for the PVDatabase.
-     * @return
+     * @return The ChannelProvider
      */
     static public ChannelProvider getChannelServer() {
         return ChannelProviderLocal.getChannelServer();
@@ -575,7 +582,7 @@ public class ChannelServerFactory  {
                 PVStructure pvStructure = pvCopy.createPVStructure();
                 BitSet bitSet = new BitSet(pvStructure.getNumberFields());
                 ChannelGetLocal getLocal = new ChannelGetLocal(
-                        ChannelServerFactory.getProcess(pvRequest,false),
+                        ChannelPrividerLocalFactory.getProcess(pvRequest,false),
                         channelLocal,
                         channelGetRequester,
                         pvCopy,
@@ -680,7 +687,7 @@ public class ChannelServerFactory  {
                 }
                 PVStructure pvStructure = pvCopy.createPVStructure();
                 ChannelPutLocal putLocal = new ChannelPutLocal(
-                        ChannelServerFactory.getProcess(pvRequest,true),
+                        ChannelPrividerLocalFactory.getProcess(pvRequest,true),
                         channelLocal,
                         channelPutRequester,
                         pvCopy,
@@ -808,7 +815,7 @@ public class ChannelServerFactory  {
                 BitSet getBitSet = new BitSet(pvGetStructure.getNumberFields());
                 
                 ChannelPutGetLocal putGet = new ChannelPutGetLocal(
-                        ChannelServerFactory.getProcess(pvRequest,false),
+                        ChannelPrividerLocalFactory.getProcess(pvRequest,false),
                         channelLocal,
                         channelPutGetRequester,
                         pvPutCopy,
