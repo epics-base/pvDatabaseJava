@@ -87,12 +87,15 @@ public class SimpleExample {
 
 		@Override
 		public void process() {
+			beginGroupPut();
 			
 			// increment value
 			value.put(value.get() + 1);
 			
 			// update timeStamp
 			super.process();
+			
+			endGroupPut();
 		}
 	}
 	
