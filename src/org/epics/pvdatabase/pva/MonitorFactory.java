@@ -10,7 +10,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.epics.pvdata.copy.PVCopy;
 import org.epics.pvdata.copy.PVCopyFactory;
-import org.epics.pvdata.copy.PVCopyTraverseMasterCallback;
 import org.epics.pvdata.factory.StatusFactory;
 import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.misc.BitSetUtil;
@@ -66,7 +65,7 @@ public class MonitorFactory {
 	
 	
 	
-	private static class MonitorLocal implements Monitor,PVCopyTraverseMasterCallback, PVListener {
+	private static class MonitorLocal implements Monitor, PVListener {
 	    
 		enum MonitorState {idle,active,destroyed}
 		
@@ -102,7 +101,7 @@ public class MonitorFactory {
             } finally {
                 lock.unlock();
             }
-            pvRecord.removeListener(this);
+            if(pvCopy!=null) pvRecord.removeListener(this,pvCopy);
             lock.lock();
             try {
                 state = MonitorState.destroyed;
@@ -117,7 +116,7 @@ public class MonitorFactory {
         public Status start() {
             if(pvRecord.getTraceLevel()>0)
             {
-                System.out.println("MonitorLocal::state state " + state);    
+                System.out.println("MonitorLocal::stop state " + state);    
             }
             lock.lock();
             try {
@@ -127,7 +126,7 @@ public class MonitorFactory {
             } finally {
                 lock.unlock();
             }
-            pvRecord.addListener(this);
+            pvRecord.addListener(this,pvCopy);
             pvRecord.lock();
             try {
                 lock.lock();
@@ -138,7 +137,6 @@ public class MonitorFactory {
                     activeElement = queue.getFree();
                     activeElement.getChangedBitSet().clear();
                     activeElement.getOverrunBitSet().clear();
-                    pvCopy.traverseMaster(this);
                     activeElement.getChangedBitSet().clear();
                     activeElement.getOverrunBitSet().clear();
                     activeElement.getChangedBitSet().set(0);
@@ -168,7 +166,7 @@ public class MonitorFactory {
             } finally {
                 lock.unlock();
             }
-            pvRecord.removeListener(this);
+            pvRecord.removeListener(this,pvCopy);
             return okStatus;
         }
 		/* (non-Javadoc)
@@ -308,14 +306,7 @@ public class MonitorFactory {
          * @see org.epics.pvdatabase.PVListener#unlisten(org.epics.pvdatabase.PVRecord)
          */
         public void unlisten(PVRecord pvRecord) {
-            pvRecord.removeListener(this);
-        }
-
-        /* (non-Javadoc)
-         * @see org.epics.pvdata.copy.PVCopyTraverseMasterCallback#nextMasterPVField(org.epics.pvdata.pv.PVField)
-         */
-        public void nextMasterPVField(PVField pvField) {
-            pvRecord.findPVRecordField(pvField).addListener(this);
+            pvRecord.removeListener(this,pvCopy);
         }
 
         private boolean init(PVStructure pvRequest) {

@@ -42,18 +42,6 @@ public interface PVRecordField {
      */
     PVRecord getPVRecord();
     /**
-     * Add a listener to this field.
-     * @param pvListener The pvListener to add to list for postPut notification.
-     * @return (false,true) if the pvListener (was not,was) added.
-     * If the listener was already in the list false is returned.
-     */
-    boolean addListener(PVListener pvListener);
-    /**
-     * remove a pvListener.
-     * @param pvListener The listener to remove.
-     */
-    void removeListener(PVListener pvListener);
-    /**
      * post that data has been modified.
      * This must be called by the code that implements put.
      */

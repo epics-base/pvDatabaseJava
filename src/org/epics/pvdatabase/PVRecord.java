@@ -20,6 +20,8 @@ import org.epics.pvdata.pv.PVField;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.PostHandler;
 import org.epics.pvdata.pv.Type;
+import org.epics.pvdata.copy.*;
+import org.epics.pvdata.copy.PVCopyTraverseMasterCallback;
 
 
 /**
@@ -28,12 +30,12 @@ import org.epics.pvdata.pv.Type;
  * @author mrk
  *  2015.01.20
  */
-public class PVRecord {
+public class PVRecord implements PVCopyTraverseMasterCallback {
 	private static final Convert convert = ConvertFactory.getConvert();
 	private static LinkedListCreate<PVListener> listenerListCreate = new LinkedListCreate<PVListener>();
 	private static LinkedListCreate<PVRecordClient> clientListCreate = new LinkedListCreate<PVRecordClient>();
     private String recordName;
-    private PVRecordStructure pvRecordStructure = null;
+    private BasePVRecordStructure pvRecordStructure = null;
     private LinkedList<PVListener> pvAllListenerList = listenerListCreate.create();
     private LinkedList<PVRecordClient> clientList = clientListCreate.create();
     private ReentrantLock lock = new ReentrantLock();
@@ -45,6 +47,11 @@ public class PVRecord {
     private PVTimeStamp pvTimeStamp = PVTimeStampFactory.create();
     private TimeStamp timeStamp = TimeStampFactory.create();
     
+    // following only valid while addListener or removeListener is active.
+    private boolean isAddListener = false;
+    private PVListener pvListener = null;
+    
+   
     /**
      * Create a PVRecord that has pvStructure as it's top level structure.
      * A derived class must call super(recordName, pvStructure).
@@ -59,16 +66,6 @@ public class PVRecord {
     	pvRecordStructure = new BasePVRecordStructure(pvStructure,null,this);
     	PVField pvField = pvRecordStructure.getPVStructure().getSubField("timeStamp");
     	if(pvField!=null) pvTimeStamp.attach(pvField);
-    }
-    /**
-     * Create a PVRecord with a process method that updates a timeStamp field
-     * if it exists as a subField of pvStructure.
-     * @param recordName The name for the record.
-     * @param pvStructure The data structure for the record.
-     * @return The PVRecord.
-     */
-    public static PVRecord create(String recordName,PVStructure pvStructure) {
-        return new PVRecord(recordName,pvStructure);
     }
     /**
      *  A derived method is expected to override this method and can also call this method.
@@ -249,8 +246,9 @@ public class PVRecord {
     /**
      * Add a PVListener. This must be called before pvField.addListener.
      * @param listener The listener.
+     * @param pvCopy The pvStructure that has the client fields.
      */
-    public final boolean addListener(PVListener listener) {
+    public final boolean addListener(PVListener listener,PVCopy pvCopy) {
         if(traceLevel>1) {
             System.out.println("PVRecord::addListener() " + recordName);
         }
@@ -259,16 +257,32 @@ public class PVRecord {
             if(pvAllListenerList.contains(listener)) return false;
             LinkedListNode<PVListener> listNode = listenerListCreate.createNode(listener);
             pvAllListenerList.addTail(listNode);
+            this.pvListener = listener;
+            isAddListener = true;
+            pvCopy.traverseMaster(this);
+            this.pvListener = null;
             return true;
         } finally {
             lock.unlock();
         }
     }
+    /* (non-Javadoc)
+     * @see org.epics.pvdata.copy.PVCopyTraverseMasterCallback#nextMasterPVField(org.epics.pvdata.pv.PVField)
+     */
+    public void nextMasterPVField(PVField pvField) {
+        BasePVRecordField pvRecordField = (BasePVRecordField)findPVRecordField(pvField);
+        if(isAddListener) {
+            pvRecordField.addListener(this.pvListener);
+        } else {
+            pvRecordField.removeListener(this.pvListener);
+        }
+    }
     /**
      * Remove a PVListener.
      * @param listener The listener.
+     *  @param pvCopy The pvStructure that has the client fields.
      */
-    public final boolean removeListener(PVListener listener) {
+    public final boolean removeListener(PVListener listener,PVCopy pvCopy) {
         if(traceLevel>1) {
             System.out.println("PVRecord::removeListener() " + recordName);
         }
@@ -276,7 +290,10 @@ public class PVRecord {
         try {
             if(!pvAllListenerList.contains(listener)) return false;
             pvAllListenerList.remove(listener);
-            pvRecordStructure.removeListener(listener);
+            this.pvListener = listener;
+            isAddListener = false;
+            pvCopy.traverseMaster(this);
+            this.pvListener = null;
             return true;
         } finally {
             lock.unlock();
@@ -394,23 +411,7 @@ public class PVRecord {
 	    public PVRecord getPVRecord() {
 	        return pvRecord;
 	    }
-	    public boolean addListener(PVListener pvListener) {
-	        if(pvListenerList.contains(pvListener)) return false;
-	        LinkedListNode<PVListener> listNode = linkedListCreate.createNode(pvListener);
-	        pvListenerList.addTail(listNode);
-	        return true;
-	    }
-	    
-	     public void removeListener(PVListener pvListener) {
-	         pvListenerList.remove(pvListener);
-	         if(isStructure) {
-	             PVRecordStructure recordStructure = (PVRecordStructure)this;
-	             PVRecordField[] pvRecordFields = recordStructure.getPVRecordFields();
-	             for(PVRecordField pvRecordField: pvRecordFields) {
-	                 pvRecordField.removeListener(pvListener);
-	             }
-	         }
-	     }
+	   
 	     public void postPut() {
 	         if(parent!=null) {
 	             BasePVRecordField pvf = (BasePVRecordField)parent;
@@ -442,7 +443,7 @@ public class PVRecord {
 	             }
 	         }
 	     }
-	     
+
 	     private void callListener() {
 	         LinkedListNode<PVListener> listNode = pvListenerList.getHead();
 	         while(listNode!=null) {
@@ -451,7 +452,7 @@ public class PVRecord {
 	             listNode = pvListenerList.getNext(listNode);
 	         }
 	     }
-	     
+
 	     private void createNames(){
 	         StringBuilder builder = new StringBuilder();
 	         PVField pvField = getPVField();
@@ -471,6 +472,23 @@ public class PVRecord {
 	         if(fullFieldName.length()>0) xxx += ".";
 	         builder.insert(0, xxx);
 	         fullName = builder.toString();
+	     }
+
+	     private boolean addListener(PVListener pvListener) {
+	         if(pvRecord.getTraceLevel()>1) {
+	             System.out.println("PVRecordField::addListener() " + getFullName() );
+	         }
+	         if(pvListenerList.contains(pvListener)) return false;
+	         LinkedListNode<PVListener> listNode = linkedListCreate.createNode(pvListener);
+	         pvListenerList.addTail(listNode);
+	         return true;
+	     }
+	     // This is only called by PVRecord, which has the record locked.
+	     private void removeListener(PVListener pvListener) {
+	         if(pvRecord.getTraceLevel()>1) {
+	             System.out.println("PVRecordField::removeListener() " + getFullName() );
+	         }
+	         pvListenerList.remove(pvListener);
 	     }
 	}
 	private static class BasePVRecordStructure extends BasePVRecordField implements PVRecordStructure {

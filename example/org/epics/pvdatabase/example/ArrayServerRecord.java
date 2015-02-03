@@ -33,7 +33,6 @@ public class ArrayServerRecord extends PVRecord implements Runnable {
         waitTime = (long)(waitSecs*1000.0);
         pvValue = pvStructure.getSubField(PVDoubleArray.class, "value");
         if(pvValue==null) throw new IllegalArgumentException("value not found");
-        value = new double[arraySize];
         thread = new Thread(this,"ArrayServerReord");
         thread.start();
     }
@@ -51,6 +50,7 @@ public class ArrayServerRecord extends PVRecord implements Runnable {
             } catch (Throwable th) {
                 th.printStackTrace();
             }
+            value = new double[arraySize];
             for(int i=0; i<arraySize; i++) value[i] = elementValue + i;
             ++elementValue;
             lock();

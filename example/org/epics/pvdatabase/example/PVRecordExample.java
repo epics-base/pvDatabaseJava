@@ -13,6 +13,7 @@ import org.epics.pvdatabase.PVRecord;
 import org.epics.pvdatabase.PVRecordClient;
 import org.epics.pvdatabase.PVRecordField;
 import org.epics.pvdatabase.PVRecordStructure;
+import org.epics.pvdata.copy.*;
 
 /**
  * @author Marty Kraimer
@@ -28,8 +29,8 @@ public class PVRecordExample {
 	static void simple()
     {
        PVRecord pvRecord = AplusBRecord.create("aplusb");
-       Client client = new Client(pvRecord);
        pvRecord.setTraceLevel(4);
+       Client client = new Client(pvRecord);
        PVStructure pvStructure = pvRecord.getPVRecordStructure().getPVStructure();
        PVDouble pva = pvStructure.getSubField(PVDouble.class, "a");
        PVDouble pvb = pvStructure.getSubField(PVDouble.class, "b");
@@ -46,17 +47,19 @@ public class PVRecordExample {
 	private static class Client implements PVListener, PVRecordClient 
 	{
 	    private PVRecord pvRecord;
+	    private PVCopy pvCopy;
 	    
 	    Client(PVRecord pv)
 	    {
-	        pvRecord = pv;  
+	        pvRecord = pv; 
+	        PVStructure pvRequest = CreateRequest.create().createRequest("field()");
+	        pvCopy = PVCopyFactory.create(pvRecord.getPVRecordStructure().getPVStructure(), pvRequest, "");
 	        pvRecord.addPVRecordClient(this);
-	        pvRecord.addListener(this);
-	        pvRecord.getPVRecordStructure().addListener(this);
+	        pvRecord.addListener(this,pvCopy);
 	    }
 	    void destroy()
 	    {
-	        pvRecord.removeListener(this);
+	        pvRecord.removeListener(this,pvCopy);
 	        pvRecord.removePVRecordClient(this);
 	    }
 	    public void detach(PVRecord pvRecord) {
