@@ -121,7 +121,7 @@
                   <skipTests>true</skipTests>
                 </configuration>
              </plugin>
-             <!--plugin>
+             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>1.9.1</version>
@@ -136,11 +136,12 @@
                       <sources>
                         <source>example</source>
                         <source>perform</source>
+                        <source>shell</source>
                       </sources>
                     </configuration>
                   </execution>
                 </executions>
-              </plugin-->
+              </plugin>
         </plugins>
     </build>
 

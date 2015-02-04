@@ -78,7 +78,7 @@ import org.epics.pvdatabase.PVRecordClient;
  * @author mrk
  *
  */
-public class ChannelPrividerLocalFactory  {
+public class ChannelProviderLocalFactory  {
      
     /**
      * Get the single instance of the local channelProvider for the PVDatabase.
@@ -582,7 +582,7 @@ public class ChannelPrividerLocalFactory  {
                 PVStructure pvStructure = pvCopy.createPVStructure();
                 BitSet bitSet = new BitSet(pvStructure.getNumberFields());
                 ChannelGetLocal getLocal = new ChannelGetLocal(
-                        ChannelPrividerLocalFactory.getProcess(pvRequest,false),
+                        ChannelProviderLocalFactory.getProcess(pvRequest,false),
                         channelLocal,
                         channelGetRequester,
                         pvCopy,
@@ -687,7 +687,7 @@ public class ChannelPrividerLocalFactory  {
                 }
                 PVStructure pvStructure = pvCopy.createPVStructure();
                 ChannelPutLocal putLocal = new ChannelPutLocal(
-                        ChannelPrividerLocalFactory.getProcess(pvRequest,true),
+                        ChannelProviderLocalFactory.getProcess(pvRequest,true),
                         channelLocal,
                         channelPutRequester,
                         pvCopy,
@@ -815,7 +815,7 @@ public class ChannelPrividerLocalFactory  {
                 BitSet getBitSet = new BitSet(pvGetStructure.getNumberFields());
                 
                 ChannelPutGetLocal putGet = new ChannelPutGetLocal(
-                        ChannelPrividerLocalFactory.getProcess(pvRequest,false),
+                        ChannelProviderLocalFactory.getProcess(pvRequest,false),
                         channelLocal,
                         channelPutGetRequester,
                         pvPutCopy,

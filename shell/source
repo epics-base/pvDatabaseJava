@@ -1,4 +1,4 @@
-# The following assumes that pvData, pvAccess, and javaIOC are eclipse projects in /home/hg
+# The following assumes that pvData, pvAccess, and javaIOC are in /home/hg
 export WORKSPACE=/home/hg
 export PVDATA=${WORKSPACE}/pvDataJava
 export PVACCESS=${WORKSPACE}/pvAccessJava

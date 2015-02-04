@@ -23,89 +23,113 @@ import org.epics.pvdatabase.pva.ContextLocal;
 /**
  */
 public class SimpleExample {
-    
-	static class PassiveScalarRecord extends PVRecord
-	{
-		static PassiveScalarRecord create(String recordName, ScalarType scalarType, String properties)
-		{
-			return new PassiveScalarRecord(
-					recordName,
-					StandardPVFieldFactory.getStandardPVField().scalar(scalarType, properties)
-					);
-		}
-		
-		private PassiveScalarRecord(String recordName, PVStructure pvStructure) {
-			super(recordName, pvStructure);
-		}
-	}
-	
-	
-	static class ScanPVRecord extends PVRecord implements TimerCallback 
-	{
-		private static Timer timer = TimerFactory.create("ScanPVRecord-timer", ThreadPriority.middle);
-		private final TimerNode timerNode = TimerFactory.createNode(this);
-		
-		private ScanPVRecord(String recordName, PVStructure pvStructure, double period) {
-			super(recordName, pvStructure);
-			timer.schedulePeriodic(timerNode, 0, period);
-		}
 
-		@Override
-		public void destroy() {
-			timerNode.cancel();
-			super.destroy();
-		}
+    static class PassiveScalarRecord extends PVRecord
+    {
+        static PassiveScalarRecord create(
+                String recordName,
+                ScalarType scalarType,
+                String properties)
+        {
+            return new PassiveScalarRecord(
+                    recordName,
+                    StandardPVFieldFactory.getStandardPVField().scalar(
+                            scalarType, properties)
+                    );
+        }
 
-		@Override
-		public void callback() {
-			process();
-		}
+        private PassiveScalarRecord(
+                String recordName,
+                PVStructure pvStructure)
+        {
+            super(recordName, pvStructure);
+        }
+    }
 
-		@Override
-		public void timerStopped() {
-			// noop
-		}
-	}
-	
-	// 1Hz 32-bit counter
-	static class CounterRecord extends ScanPVRecord
-	{
-		static CounterRecord create(String recordName)
-		{
-			return new CounterRecord(
-					recordName,
-					StandardPVFieldFactory.getStandardPVField().scalar(ScalarType.pvInt, "timeStamp")
-					);
-		}
-		
-		private final PVInt value;
-		
-		private CounterRecord(String recordName, PVStructure pvStructure) {
-			super(recordName, pvStructure, 1.0);
-			value = pvStructure.getIntField("value");
-		}
 
-		@Override
-		public void process() {
-			beginGroupPut();
-			
-			// increment value
-			value.put(value.get() + 1);
-			
-			// update timeStamp
-			super.process();
-			
-			endGroupPut();
-		}
-	}
-	
-	public static void main(String[] args)
-	{
-	    PVDatabase master = PVDatabaseFactory.getMaster();
-	    master.addRecord(PassiveScalarRecord.create("testScalar", ScalarType.pvInt, "timeStamp"));
-	    master.addRecord(CounterRecord.create("testCounter"));
+    static class ScanPVRecord extends PVRecord implements TimerCallback 
+    {
+        private static Timer timer = TimerFactory.create(
+                "ScanPVRecord-timer",
+                ThreadPriority.middle);
+        private final TimerNode timerNode = TimerFactory.createNode(this);
 
-	    ContextLocal context = new ContextLocal();
-	    context.start(true);
-	}
+        ScanPVRecord(
+                String recordName,
+                PVStructure pvStructure,double period)
+                {
+            super(recordName, pvStructure);
+            timer.schedulePeriodic(timerNode, 0, period);
+                }
+
+        @Override
+        public void destroy() {
+            timerNode.cancel();
+            super.destroy();
+        }
+
+        @Override
+        public void callback() {
+            lock();
+            try {
+                beginGroupPut();
+                process();
+                endGroupPut();
+            } finally {
+                unlock();
+            }
+        }
+
+        @Override
+        public void timerStopped() {
+            // noop
+        }
+    }
+
+    // 1Hz 32-bit counter
+    static class CounterRecord extends ScanPVRecord
+    {
+        static CounterRecord create(String recordName)
+        {
+            return new CounterRecord(
+                    recordName,
+                    StandardPVFieldFactory.getStandardPVField().scalar(
+                            ScalarType.pvInt,
+                            "timeStamp"));
+        }
+
+        private final PVInt value;
+
+        private CounterRecord(String recordName, PVStructure pvStructure) {
+            super(recordName, pvStructure, 1.0);
+            value = pvStructure.getIntField("value");
+        }
+
+        @Override
+        public void process() {
+            // increment value
+            value.put(value.get() + 1);
+            // update timeStamp
+            super.process();
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        PVDatabase master = PVDatabaseFactory.getMaster();
+        master.addRecord(PassiveScalarRecord.create(
+                "testScalar",
+                ScalarType.pvInt,
+                "timeStamp"));
+        master.addRecord(new ScanPVRecord(
+                "testScan",
+                StandardPVFieldFactory.getStandardPVField().scalar(
+                        ScalarType.pvString,
+                        "timeStamp"),
+                        1.0));
+        master.addRecord(CounterRecord.create("testCounter"));
+
+        ContextLocal context = new ContextLocal();
+        context.start(true);
+    }
 }

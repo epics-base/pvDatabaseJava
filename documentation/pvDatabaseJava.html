@@ -38,7 +38,7 @@
 <h1>pvDatabaseJava</h1>
 <!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date. -->
 
-<h2 class="nocount">EPICS v4 Working Group, Working Draft, 30-Jan-2015</h2>
+<h2 class="nocount">EPICS v4 Working Group, Working Draft, 04-Feb-2015</h2>
 <dl>
     <dt>Latest version:</dt>
     <dd><a
@@ -46,11 +46,11 @@
     </dd>
     <dt>This version:</dt>
     <dd><a
-       href= "pvDatabaseJava_20150130.html">pvDatabaseJava20150130.html
+       href= "pvDatabaseJava_20150203.html">pvDatabaseJava20150203.html
     </a> </dd>
     <dt>Previous version:</dt>
     <dd><a
-       href= "pvDatabaseJava_20150126.html">pvDatabaseJava20150126.html
+       href= "pvDatabaseJava_20150130.html">pvDatabaseJava20150130.html
     </a> </dd>
   <dt>Editors:</dt>
     <dd>Marty Kraimer, BNL</dd>
@@ -78,35 +78,28 @@ V4 control system programming environment:<br />
 
 <h2 class="nocount">Status of this Document</h2>
 
-<p>This is the 30-Jan-2015 version of of pvDatabaseJava.</p>
+<p>This is the 04-Feb-2015 version of of pvDatabaseJava.</p>
 <p>
 This version is a complete implementation of what is described in this manual.
 </p>
 <p>Since the last version:</p>
 <dl>
-  <dt>example records</dt>
-    <dd>A example of a "dynamic" record has been created.</dd>
-  <dt>performance</dt>
-     <dd>Client programs have been created to test the example database</dd>
-  <dt>shell</dt>
-     <dd>shell scripts have been created for starting example databases
-       and performance tests.</dd>
-  <dt>Connection Management</dt>
-    <dd>The performance tests also test connection management.
-     Looks good so far.
-     The only known problem is that neither clients or databases
-     terminate properly.
+  <dt>SimpleExample</dt>
+    <dd>This is a new example that creates three different types of records,
+      creates the database and starts pvAccess all in one source file.
+    </dd>
+   <dt>addListener</dt>
+     <dd>Before ChannelProviderLocalFactory had to
+      call PVRecordField::addListener with strange rules about locking.
+      Now the implementation in PVRecord does this.
      </dd>
-  <dt>Array Perforamance</dt>
-     <dd>The performance tests also test array performance.
-      This also looks good so far.</dd>
 </dl>
 <p>The following will be done next:</p>
 <dl>
   <dt>Update pvDatabaseCPP</dt>
     <dd>pvDatabaseJava is based on pvDatabaseCPP.
      Development resulted in a better implementation of some components.
-     Similar changes should be made in pbDatabaseCPP.
+     Similar changes should be made in pvDatabaseCPP.
     </dd>
    <dt>pvDatabaseJava.html</dt>
      <dd>More work on this document.</dd>
@@ -145,10 +138,10 @@ A record is smart because code can be attached to a record, which is accessed vi
      <dd>This encapsulates the concept of a database of memory resident smart records.
         The two main components are:
        <dl>
-          <dt>pvRecord</dt>
+          <dt>PVRecord</dt>
              <dd>This encapsulates the concept of a smart record. It can be processed.
              Changes to field values can be trapped. A record can be locked.</dd>
-          <dt>pvDatabase</dt>
+          <dt>PVDatabase</dt>
               <dd>This is a database of pvRecords.
                Records can be added and removed from a database.</dd>
        </dl>
@@ -160,8 +153,18 @@ A record is smart because code can be attached to a record, which is accessed vi
        </dd>
 </dl>
 <p>PVRecord is a base class that makes it easy to create record instances.
-The code attached to each record must create the top
-level PVStructure and the following methods:</p>
+Given a PVStructure, the PVRecord constructor can be called to create a new PVRecord
+instance.
+If the structure has a timeStamp field then the base class process routine
+sets the timeStamp to the current time.
+Otherwise process does nothing.
+</p>
+<p>
+Server code can extend the base class.
+It should provide a static create method that creates the top level
+PVStructure and creates a new PVRecord
+that extends PVRecord.
+It can  override the following methods:</p>
 <dl>
   <dt>Constructor</dt>
     <dd>A derived class constructor must call the base class constructor.</dd>
@@ -178,6 +181,136 @@ level PVStructure and the following methods:</p>
 <p>JavaDoc is available at <a
 href="./html/index.html">javaDoc</a></p>
 <h2>Getting started</h2>
+<h3>SimpleExample</h3>
+<p>This is an example that creates PVRecords, adds them to the database,
+and starts pvAccess all in a single source file.</p>
+<p>Three examples of extending PVRecord are shown:</p>
+<dl>
+   <dt>PassiveScalarRecord</dt>
+     <dd>This overides neither process or destroy.
+      The only difference from directly calling the base class constructor
+      is that a static create method is provided.
+      </dd>
+   <dt>ScanPVRecord</dt>
+      <dd>This is an example that periodically makes the record process.
+       Since process is not overriden only the timeStamp will update
+       unless a client changes it.
+      </dd>
+   <dt>CounterRecord</dt>
+      <dd>This increments value each time the record is processed.</dd>
+</dl>
+<p>The main program creates a record of each type, adds each record to the
+database, and starts the pvAccess server.
+</p>
+<pre>
+public class SimpleExample {
+
+    static class PassiveScalarRecord extends PVRecord
+    {
+        static PassiveScalarRecord create(
+                String recordName,
+                ScalarType scalarType,
+                String properties)
+        {
+            return new PassiveScalarRecord(
+                    recordName,
+                    StandardPVFieldFactory.getStandardPVField().scalar(
+                            scalarType, properties)
+                    );
+        }
+
+        private PassiveScalarRecord(
+                String recordName,
+                PVStructure pvStructure)
+        {
+            super(recordName, pvStructure);
+        }
+    }
+
+    static class ScanPVRecord extends PVRecord implements TimerCallback 
+    {
+        private static Timer timer = TimerFactory.create(
+                "ScanPVRecord-timer",
+                ThreadPriority.middle);
+        private final TimerNode timerNode = TimerFactory.createNode(this);
+
+        ScanPVRecord(
+                String recordName,
+                PVStructure pvStructure,double period)
+                {
+            super(recordName, pvStructure);
+            timer.schedulePeriodic(timerNode, 0, period);
+                }
+
+        public void destroy() {
+            timerNode.cancel();
+            super.destroy();
+        }
+
+        public void callback() {
+            lock();
+            try {
+                beginGroupPut();
+                process();
+                endGroupPut();
+            } finally {
+                unlock();
+            }
+        }
+
+        public void timerStopped() {
+            // noop
+        }
+    }
+
+    // 1Hz 32-bit counter
+    static class CounterRecord extends ScanPVRecord
+    {
+        static CounterRecord create(String recordName)
+        {
+            return new CounterRecord(
+                    recordName,
+                    StandardPVFieldFactory.getStandardPVField().scalar(
+                            ScalarType.pvInt,
+                            "timeStamp"));
+        }
+
+        private final PVInt value;
+
+        private CounterRecord(String recordName, PVStructure pvStructure) {
+            super(recordName, pvStructure, 1.0);
+            value = pvStructure.getIntField("value");
+        }
+
+        public void process() {
+            // increment value
+            value.put(value.get() + 1);
+            // update timeStamp
+            super.process();
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        PVDatabase master = PVDatabaseFactory.getMaster();
+        master.addRecord(PassiveScalarRecord.create(
+                "testScalar",
+                ScalarType.pvInt,
+                "timeStamp"));
+        master.addRecord(new ScanPVRecord(
+                "testScan",
+                StandardPVFieldFactory.getStandardPVField().scalar(
+                        ScalarType.pvString,
+                        "timeStamp"),
+                        1.0));
+        master.addRecord(CounterRecord.create("testCounter"));
+
+        ContextLocal context = new ContextLocal();
+        context.start(true);
+    }
+}
+</pre>
+<h3>Hello World</h3>
 <p>pvDatabaseJava provides a pom.xml files so that maven can be used to
 build it.
 </p>
@@ -225,7 +358,7 @@ mrk&gt;
 <h3>Client Driven Records</h3>
 <p>This means that process is called by clients not by the service itself.</p>
 <p>The PVRecord base class can be used to create records
-that can driver entirely by client except for setting a value
+that can driven entirely by client except for setting a value
 for the timeStamp.
 The ExampleDatabase shows how to construct such records.
 </p>
@@ -337,6 +470,7 @@ public class ArrayServerRecord extends PVRecord implements Runnable {
             } catch (Throwable th) {
                 th.printStackTrace();
             }
+            value = new double[arraySize];
             for(int i=0; i&lt;arraySize; i++) value[i] = elementValue + i;
             ++elementValue;
             lock();
@@ -415,6 +549,8 @@ for details.
 </dl>
 <h2>org.epics.pvdatabase.pva.example</h2>
 <dl>
+  <dt>SimpleExample</dt>
+    <dd>This was discussed above.</dd>
   <dt>ExampleDatabase</dt>
     <dd>
      This is creates four PVRecords.
@@ -484,7 +620,9 @@ source source
     </dd>
   <dt>exampleDatabase</dt>
     <dd>
-      Starts the ExampleDatabse.
+      Starts the ExampleDatabase.
+       To start the other examples replace ExampeDatabase 
+       by AplusBRecord, HelloExample or SimpleExample.
     </dd>
   <dt>doublePut</dt>
     <dd>

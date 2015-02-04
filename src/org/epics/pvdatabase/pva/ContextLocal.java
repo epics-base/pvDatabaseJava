@@ -57,7 +57,7 @@ public class ContextLocal implements Runnable{
         }
         destroy();
     }
-    private ChannelProvider channelProvider = ChannelPrividerLocalFactory.getChannelServer();
+    private ChannelProvider channelProvider = ChannelProviderLocalFactory.getChannelServer();
     private final ServerContextImpl context = new ServerContextImpl();
     private Thread thread = null;
     
