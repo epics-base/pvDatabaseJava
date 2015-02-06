@@ -84,6 +84,12 @@ public class ArrayIntegrity {
                 put2.issuePut();
                 put1.waitPut();
                 put2.waitPut();
+                try {
+                    Thread.sleep(10);
+                } catch (Throwable th) {
+                    th.printStackTrace();
+                    continue;
+                }
             }
         }   
     }
