@@ -123,7 +123,7 @@ public class ArrayIntegrity {
                 }
                 pvDoubleArray.get(0, pvDoubleArray.getLength(),data);
                 if(data.data[0]!=data.data[len-1]) {
-                    System.out.println("data[0] " + data.data[0] + " data[" + len + "] " + data.data[len]);
+                    System.out.println("data[0] " + data.data[0] + " data[" + (len-1) + "] " + data.data[len-1]);
                 }
             }
         }
