@@ -67,12 +67,12 @@ public class ExampleDatabase {
 	    master.addRecord(pvRecord);
 
 	    PVStructure pvStructure = standardPVField.scalar(ScalarType.pvDouble, "alarm,timeStamp");
-	    pvRecord = new PVRecord(prefix + "doubleRecord",pvStructure);
+	    pvRecord = new PVRecord(prefix + "exampleDouble",pvStructure);
 	    pvRecord.setTraceLevel(traceLevel);
 	    master.addRecord(pvRecord);
 
 	    pvStructure = standardPVField.scalarArray(ScalarType.pvDouble, "alarm,timeStamp");
-	    pvRecord = new PVRecord(prefix + "doubleArrayRecord",pvStructure);
+	    pvRecord = new PVRecord(prefix + "exampleDoubleArray",pvStructure);
 	    pvRecord.setTraceLevel(traceLevel);
 	    master.addRecord(pvRecord);
 

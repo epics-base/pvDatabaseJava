@@ -108,6 +108,11 @@ public class MonitorFactory {
             } finally {
                 lock.unlock();
             }
+            synchronized(queue)
+            {
+                queue.clear();
+            }
+            pvCopy = null;
         }
        
         /* (non-Javadoc)
@@ -135,8 +140,6 @@ public class MonitorFactory {
                     queue.clear();
                     isGroupPut = false;
                     activeElement = queue.getFree();
-                    activeElement.getChangedBitSet().clear();
-                    activeElement.getOverrunBitSet().clear();
                     activeElement.getChangedBitSet().clear();
                     activeElement.getOverrunBitSet().clear();
                     activeElement.getChangedBitSet().set(0);
@@ -196,15 +199,15 @@ public class MonitorFactory {
 		    }
 		}
 		
-		private MonitorElement releaseActiveElement() {
+		private void releaseActiveElement() {
 		    if(pvRecord.getTraceLevel()>0)
             {
                 System.out.println("MonitorLocal::releaseActiveElement state " + state);    
             }
 		    synchronized(queue) {
-		        if(state!=MonitorState.active) return null;
+		        if(state!=MonitorState.active) return;
 		        MonitorElement newActive = queue.getFree();
-		        if(newActive==null) return activeElement;
+		        if(newActive==null) return;
 		        pvCopy.updateCopyFromBitSet(activeElement.getPVStructure(), activeElement.getChangedBitSet());
 		        bitSetUtil.compress(activeElement.getChangedBitSet(),activeElement.getPVStructure());
 		        bitSetUtil.compress(activeElement.getOverrunBitSet(),activeElement.getPVStructure());
@@ -214,7 +217,7 @@ public class MonitorFactory {
 		        activeElement.getOverrunBitSet().clear();
 		    }
 		    monitorRequester.monitorEvent(this);
-		    return activeElement;
+		    return;
 		}	
         
 
@@ -306,27 +309,27 @@ public class MonitorFactory {
          * @see org.epics.pvdatabase.PVListener#unlisten(org.epics.pvdatabase.PVRecord)
          */
         public void unlisten(PVRecord pvRecord) {
+            if(pvRecord.getTraceLevel()>1) {
+                System.out.println("PVCopyMonitor::unlisten");
+            }
             pvRecord.removeListener(this,pvCopy);
         }
 
         private boolean init(PVStructure pvRequest) {
 		    PVField pvField = null;
-		    PVStructure pvOptions = null;
 			int queueSize = 2;
-			pvField = pvRequest.getSubField("record._options");
-			if(pvField!=null) {
-			    pvOptions = (PVStructure)pvField;
-			    pvField = pvOptions.getSubField("queueSize");
-			}
-			if(pvField!=null && (pvField instanceof PVString)) {
-				PVString pvString = (PVString)pvField;
-				String value = pvString.get();
-				try {
-					queueSize = Integer.parseInt(value);
-				} catch (NumberFormatException e) {
-					monitorRequester.message("queueSize " + e.getMessage(), MessageType.error);
-					return false;
-				}
+			PVStructure pvOptions = pvRequest.getSubField(PVStructure.class,"record._options");
+			if(pvOptions!=null) {
+			    PVString pvString = pvOptions.getSubField(PVString.class, "queueSize");
+			    if(pvString!=null) {
+			        String value = pvString.get();
+	                try {
+	                    queueSize = Integer.parseInt(value);
+	                } catch (NumberFormatException e) {
+	                    monitorRequester.message("queueSize " + e.getMessage(), MessageType.error);
+	                    return false;
+	                }
+			    }
 			}
 			pvField = pvRequest.getSubField("field");
 			if(pvField==null) {

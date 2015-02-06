@@ -1,0 +1,5 @@
+#! /bin/bash
+source source
+java org.epics.pvdatabase.perform.ArrayIntegrity \
+    -channelName exampleDoubleArray \
+    -debugLevel 1

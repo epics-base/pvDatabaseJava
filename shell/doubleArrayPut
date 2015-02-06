@@ -1,7 +1,7 @@
 #! /bin/bash
 source source
 java org.epics.pvdatabase.perform.DoubleArrayPut \
-   -channelName doubleArrayRecord \
+   -channelName exampleDoubleArray \
    -waitSecs .001 \
    -maxSize 5000000 \
    -numberSizes 5

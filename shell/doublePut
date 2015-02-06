@@ -1,6 +1,6 @@
 #! /bin/bash
 source source
 java org.epics.pvdatabase.perform.DoublePut \
-      -channelName doubleRecord \
+      -channelName exampleDouble \
       -waitSecs .001 \
       -numberPuts 1000

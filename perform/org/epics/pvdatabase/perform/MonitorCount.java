@@ -61,7 +61,7 @@ public class MonitorCount {
             int noverrun = 0;
             EasyChannel easyChannel = easyPVA.createChannel(channelName);
             easyChannel.connect(1.0);
-            if(!easyChannel.waitConnect(10.0)) {
+            if(!easyChannel.waitConnect(5.0)) {
                 System.out.println("did not connect to " + channelName);
                 continue;
             }
