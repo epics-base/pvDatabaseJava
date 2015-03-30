@@ -22,7 +22,6 @@ public class AplusBRecord extends PVRecord {
         Structure structure = 
             fb.add("a", ScalarType.pvDouble).
             add("b", ScalarType.pvDouble).
-            add("b", ScalarType.pvDouble).
             add("c", ScalarType.pvDouble).
             add("timeStamp",standardField.timeStamp()).
             createStructure();
@@ -41,7 +40,7 @@ public class AplusBRecord extends PVRecord {
     public void process()
     {
         int level = getTraceLevel();
-        if(level>1) System.out.println("PVRecordAplusB::process");
+        if(level>1) System.out.println("AplusB::process");
         pvc.put(pva.get() + pvb.get());
         super.process();
     }
