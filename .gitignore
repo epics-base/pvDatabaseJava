@@ -1,2 +1,5 @@
-/target/
-LICENSE.txt
+bin
+doc
+target
+documentation/html
+.classpath
