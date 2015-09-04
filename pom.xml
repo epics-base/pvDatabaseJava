@@ -4,7 +4,7 @@
 
     <groupId>org.epics</groupId>
     <artifactId>pvDatabaseJava</artifactId>
-    <version>4.1.0</version>
+    <version>4.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>pvDatabase - Java</name>
@@ -55,7 +55,7 @@
             <url>http://epics.sourceforge.net/maven2/</url>
         </repository>
     </repositories>
-      
+
     <build>
         <sourceDirectory>src</sourceDirectory>
         <testSourceDirectory>test</testSourceDirectory>
