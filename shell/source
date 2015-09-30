@@ -1,11 +1,13 @@
 # The following assumes that pvData, pvAccess, and javaIOC are in /home/hg
-export WORKSPACE=/home/hg
-export PVDATA=${WORKSPACE}/pvDataJava
-export PVACCESS=${WORKSPACE}/pvAccessJava
-export EASYPVA=${WORKSPACE}/easyPVAJava
-export PVDATABASE=${WORKSPACE}/pvDatabaseJava
-export CLASSPATH=${CLASSPATH}:${PVDATA}/bin
-export CLASSPATH=${CLASSPATH}:${PVACCESS}/bin
-export CLASSPATH=${CLASSPATH}:${EASYPVA}/bin
+export EPICSV4=/home/epicsv4
+export CLASSPATH=${EPICSV4}/jca-2.3.6.jar
+export CLASSPATH=${CLASSPATH}:${EPICSV4}/caj-1.1.15.jar
+export PVDATA=${EPICSV4}/pvDataJava
+export PVACCESS=${EPICSV4}/pvAccessJava
+export PVACLIENT=${EPICSV4}/pvaClientJava
+export PVDATABASE=${EPICSV4}/pvDatabaseJava
+export CLASSPATH=${CLASSPATH}:${PVDATA}/target/classes
+export CLASSPATH=${CLASSPATH}:${PVACCESS}/target/classes
+export CLASSPATH=${CLASSPATH}:${PVACLIENT}/target/classes
 export CLASSPATH=${CLASSPATH}:${PVDATABASE}/target/classes
 

@@ -11,37 +11,22 @@ pvDatabase is thus easier to use than pvAccess itself.
 Building
 --------
 
-    mvn package
+    mvn site
 
 
 Examples
 ------------
 
-The examples require the database in pvDatabaseTestCPP.
+The examples require the database in pvaClientTestCPP.
 For example:
 
     mrk> pwd
-    /home/epicsv4/pvDatabaseTestCPP/database/iocBoot/exampleDatabase
+    /home/epicsv4/pvaClientTestCPP/database/iocBoot/exampleDatabase
     mrk> ../../bin/linux-x86_64/exampleDatabase st.cmd 
 
 Status
 ------
 
-* The API is for release 4.5.0-pre1
-* Everything defined in pvDatabase.h should be ready but see below for remaining work.
-* Everything defined in pvDatabaseMultiChannel.h is ready but see below for remaining work.
+* The API is for EPICS Version 4 release 4.5.0
 
 
-pvDatabaseChannel
----------------
-
-Channel::getField and channelArray are not supported for release 4.5.
-
-pvDatabaseMultiChannel
----------------
-
-For release 4.6 support is available for multiDouble and NTMultiChannel.
-In the future additional support should be provided that at least includes NTScalarMultiChannel.
-
-Testing with some channels not connected have not been done.
-At least some testing with missing channels should be done before release 4.5
