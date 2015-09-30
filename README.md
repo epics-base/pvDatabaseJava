@@ -11,7 +11,7 @@ pvDatabase is thus easier to use than pvAccess itself.
 Building
 --------
 
-    mvn site
+    mvn package
 
 
 Examples
