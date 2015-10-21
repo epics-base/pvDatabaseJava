@@ -1,5 +1,5 @@
 package org.epics.pvdatabase.perform;
-import org.epics.pvaccess.easyPVA.*;
+import org.epics.pvaClient.*;
 import org.epics.pvdata.property.*;
 
 public class DoubleArrayPut {
@@ -13,7 +13,7 @@ public class DoubleArrayPut {
                 );
     }
     
-    static private EasyPVA easyPVA = EasyPVAFactory.get();
+    static private PvaClient pvaClient = PvaClient.get();
     
     static private double waitSecs = .001;
     static private int maxSize = 5000000;
@@ -53,14 +53,15 @@ public class DoubleArrayPut {
         while(true) {
             start.getCurrentTime();
             long nbytes = 0;
-            EasyChannel channel = easyPVA.createChannel(channelName);
-            EasyPut put = channel.createPut();
+            PvaClientChannel channel = pvaClient.createChannel(channelName);
+            PvaClientPut put = channel.createPut();
+            PvaClientPutData putData = put.getData();
             for(int i=0; i< numberSizes; ++i) {
                 int len = maxSize/(i+1);
                 nbytes += len*8;
                 double[] value = new double[len];
                 for(int j=0; j< len; j++) value[j] = i*j;
-                put.putDoubleArray(value, len);
+                putData.putDoubleArray(value); put.put();
                 try {
                 Thread.sleep(waitTime);
                 } catch (Throwable th) {

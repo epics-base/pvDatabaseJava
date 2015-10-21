@@ -191,6 +191,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
      * Register a client of the record.
      * This must be called by any code that connects to the record.
      * @param pvRecordClient The record client.
+     *  @return (false,true) means (failure,success)
      */
     public final boolean addPVRecordClient(PVRecordClient pvRecordClient) {
         if(traceLevel>2) {
@@ -210,6 +211,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
      * remove a client of the record.
      * This must be called by any code that disconnects from the record.
      * @param pvRecordClient The record client.
+     *  @return (false,true) means (failure,success)
      */
     public final boolean removePVRecordClient(PVRecordClient pvRecordClient) {
         if(traceLevel>2) {
@@ -247,6 +249,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
      * Add a PVListener. This must be called before pvField.addListener.
      * @param listener The listener.
      * @param pvCopy The pvStructure that has the client fields.
+     *  @return (false,true) means (failure,success)
      */
     public final boolean addListener(PVListener listener,PVCopy pvCopy) {
         if(traceLevel>1) {
@@ -281,6 +284,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
      * Remove a PVListener.
      * @param listener The listener.
      *  @param pvCopy The pvStructure that has the client fields.
+     *  @return (false,true) means (failure,success)
      */
     public final boolean removeListener(PVListener listener,PVCopy pvCopy) {
         if(traceLevel>1) {

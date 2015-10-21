@@ -1,9 +1,6 @@
 package org.epics.pvdatabase.perform;
 import org.epics.pvaccess.client.Channel;
-import org.epics.pvaccess.easyPVA.EasyChannel;
-import org.epics.pvaccess.easyPVA.EasyPVA;
-import org.epics.pvaccess.easyPVA.EasyPVAFactory;
-import org.epics.pvaccess.easyPVA.EasyPut;
+import org.epics.pvaClient.*;
 import org.epics.pvdata.copy.CreateRequest;
 import org.epics.pvdata.monitor.Monitor;
 import org.epics.pvdata.monitor.MonitorElement;
@@ -24,12 +21,11 @@ public class ArrayIntegrity {
                 );
     }
     
-    static private EasyPVA easyPVA = EasyPVAFactory.get();
+    static private PvaClient pvaClient = PvaClient.get();
     
     static private int debugLevel = 0;
     
     public static void main(String[] args) {
-        easyPVA.setAuto(true, false);
         if(args.length<1) {
             usage();
             return;
@@ -51,13 +47,14 @@ public class ArrayIntegrity {
             }
         }
         while(true) {
-            EasyChannel easyChannel = easyPVA.createChannel(channelName);
-            easyChannel.connect(1.0);
-            if(!easyChannel.waitConnect(5.0)) {
+            PvaClientChannel pvaClientChannel = pvaClient.createChannel(channelName);
+            pvaClientChannel.issueConnect();
+            Status status = pvaClientChannel.waitConnect(2.0);
+            if(!status.isOK()) {
                 System.out.println("did not connect to " + channelName);
                 continue;
             }
-            Channel channel = easyChannel.getChannel();
+            Channel channel = pvaClientChannel.getChannel();
             PVStructure pvRequest = CreateRequest.create().createRequest("field()");
             MyRequester myRequester = new MyRequester();
             Monitor monitor = channel.createMonitor(myRequester, pvRequest);
@@ -71,15 +68,17 @@ public class ArrayIntegrity {
             int len = 1000;
             double[] first = new double[len];
             double[] second = new double[len];
-            EasyPut put1 = easyChannel.createPut();
-            EasyPut put2 = easyChannel.createPut();
+            PvaClientPut put1 = pvaClientChannel.createPut();
+            PvaClientPutData putData1 = put1.getData();
+            PvaClientPut put2 = pvaClientChannel.createPut();
+            PvaClientPutData putData2 = put2.getData();
             for(int ind = 0; ind<10; ++ind) {
                 for(int i=0; i<len; ++i) {
                     first[i] = (double)ind;
                     second[i] = (double)(ind+1);
                 }
-                put1.putDoubleArray(first,len);
-                put2.putDoubleArray(first,len);
+                putData1.putDoubleArray(first);
+                putData2.putDoubleArray(second);
                 put1.issuePut();
                 put2.issuePut();
                 put1.waitPut();

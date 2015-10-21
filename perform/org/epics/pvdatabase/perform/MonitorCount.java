@@ -1,5 +1,5 @@
 package org.epics.pvdatabase.perform;
-import org.epics.pvaccess.easyPVA.*;
+import org.epics.pvaClient.*;
 import org.epics.pvdata.property.*;
 import org.epics.pvdata.copy.CreateRequest;
 import org.epics.pvdata.pv.*;
@@ -18,7 +18,7 @@ public class MonitorCount {
                 );
     }
 
-    static private EasyPVA easyPVA = EasyPVAFactory.get();
+    static private PvaClient pvaClient = PvaClient.get();
 
     static private double waitSecs = .001;
     static private int numberMonitors = 100; 
@@ -59,13 +59,14 @@ public class MonitorCount {
             start.getCurrentTime();
             int ntimes = 0;
             int noverrun = 0;
-            EasyChannel easyChannel = easyPVA.createChannel(channelName);
-            easyChannel.connect(1.0);
-            if(!easyChannel.waitConnect(5.0)) {
+            PvaClientChannel pvaClientChannel = pvaClient.createChannel(channelName);
+            pvaClientChannel.issueConnect();
+            Status status = pvaClientChannel.waitConnect(5.0);
+            if(!status.isOK()) {
                 System.out.println("did not connect to " + channelName);
                 continue;
             }
-            Channel channel = easyChannel.getChannel();
+            Channel channel = pvaClientChannel.getChannel();
             PVStructure pvRequest = CreateRequest.create().createRequest("field()");
             Monitor monitor = channel.createMonitor(myRequester, pvRequest);
             try {

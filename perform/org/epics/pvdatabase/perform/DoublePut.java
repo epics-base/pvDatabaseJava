@@ -1,5 +1,5 @@
 package org.epics.pvdatabase.perform;
-import org.epics.pvaccess.easyPVA.*;
+import org.epics.pvaClient.*;
 import org.epics.pvdata.property.*;
 
 public class DoublePut {
@@ -12,7 +12,7 @@ public class DoublePut {
                 );
     }
     
-    static private EasyPVA easyPVA = EasyPVAFactory.get();
+    static private PvaClient pvaClient = PvaClient.get();
     
     static private double waitSecs = .001;
     static private int numberPuts = 1000; 
@@ -48,11 +48,12 @@ public class DoublePut {
         double value;
         while(true) {
             start.getCurrentTime();
-            EasyChannel channel = easyPVA.createChannel(channelName);
-            EasyPut put = channel.createPut();
+            PvaClientChannel channel = pvaClient.createChannel(channelName);
+            PvaClientPut put = channel.createPut();
+            PvaClientPutData putData = put.getData();
             for(int i=0; i< numberPuts; ++i) {
                 value = i;
-                put.putDouble(value);
+                putData.putDouble(value); put.put();
             }
             end.getCurrentTime();
             double diff = start.diff(end, start);

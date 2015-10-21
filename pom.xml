@@ -33,8 +33,8 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>easyPVAJava</artifactId>
-            <version>4.1.0-SNAPSHOT</version>
+            <artifactId>pvaClientJava</artifactId>
+            <version>4.2.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
     
@@ -55,11 +55,37 @@
             <url>http://epics.sourceforge.net/maven2/</url>
         </repository>
     </repositories>
-      
+
     <build>
         <sourceDirectory>src</sourceDirectory>
         <testSourceDirectory>test</testSourceDirectory>
         <plugins>
+
+            <!-- Includes the OSGi manifest -->
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>2.5.3</version>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>    
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                    <archive>  
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive> 
+                </configuration>
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -98,7 +124,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <overview>documentation/pvDatabaseJava.html</overview>
+                    <overview>documentation/pvaDatabaseJava.html</overview>
                 </configuration>
             </plugin>
 
@@ -113,14 +139,8 @@
                     </dependency> 
                 </dependencies> 
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.18.1</version>
-                <configuration>
-                  <skipTests>true</skipTests>
-                </configuration>
-             </plugin>
+
+
              <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
