@@ -815,7 +815,7 @@ public class ChannelProviderLocalFactory  {
                 BitSet getBitSet = new BitSet(pvGetStructure.getNumberFields());
                 
                 ChannelPutGetLocal putGet = new ChannelPutGetLocal(
-                        ChannelProviderLocalFactory.getProcess(pvRequest,false),
+                        ChannelProviderLocalFactory.getProcess(pvRequest,true),
                         channelLocal,
                         channelPutGetRequester,
                         pvPutCopy,
