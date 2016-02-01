@@ -1,4 +1,5 @@
-# The following assumes that pvData, pvAccess, and javaIOC are in /home/hg
+# The following assumes that pvData, pvAccess, pvaClient and pvDatabase are
+# in /home/epicsv4
 export EPICSV4=/home/epicsv4
 export CLASSPATH=${EPICSV4}/jca-2.3.6.jar
 export CLASSPATH=${CLASSPATH}:${EPICSV4}/caj-1.1.15.jar
