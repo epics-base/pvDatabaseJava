@@ -917,12 +917,14 @@ public class ChannelProviderLocalFactory  {
         
     private static class ChannelRPCLocal implements ChannelRPC, RPCResponseCallback
     {
+        private boolean isDestroyed = false;
         private final Channel channel;
         private final ChannelRPCRequester channelRPCRequester;
         private final PVStructure pvRequest;
         private final PVRecord pvRecord;
         private volatile boolean lastRequest = false;
         private final Service service;
+        private ReentrantLock lock = new ReentrantLock();
 
         
         private ChannelRPCLocal(Channel channel, ChannelRPCRequester channelRPCRequester,
@@ -952,6 +954,9 @@ public class ChannelProviderLocalFactory  {
                 channelRPC = new ChannelRPCLocal(channelLocal, channelRPCRequester, pvRequest,
                     pvRecord, service);
                 channelRPCRequester.channelRPCConnect(okStatus,channelRPC);
+                if(pvRecord.getTraceLevel()>0) {
+                    System.out.println("ChannelRPCLocal::create recordName " + pvRecord.getRecordName());
+                }
             }
 
             return channelRPC;
@@ -1045,6 +1050,15 @@ public class ChannelProviderLocalFactory  {
         @Override
         public void request(final PVStructure pvArgument) {
 
+            if(isDestroyed) {
+                channelRPCRequester.requestDone(requestDestroyedStatus, this, null);
+                return;
+            }
+
+            if(pvRecord.getTraceLevel()>1) {
+                System.out.println("ChannelRPCLocal::request");
+            }
+
             if (service instanceof RPCService)
             {
                 final RPCService rpcService = (RPCService)service;
@@ -1061,6 +1075,13 @@ public class ChannelProviderLocalFactory  {
 
         @Override
         public void destroy() {
+            lock.lock();
+            try {
+                if(isDestroyed) return;
+                isDestroyed = true;
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
