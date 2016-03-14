@@ -3,6 +3,7 @@ package org.epics.pvdatabase.example;
 import org.epics.pvdata.factory.FieldFactory;
 import org.epics.pvdata.factory.PVDataFactory;
 import org.epics.pvdata.factory.StandardFieldFactory;
+import org.epics.pvdata.factory.StatusFactory;
 import org.epics.pvdata.pv.FieldBuilder;
 import org.epics.pvdata.pv.FieldCreate;
 import org.epics.pvdata.pv.PVDataCreate;
@@ -13,11 +14,15 @@ import org.epics.pvdata.pv.PVStructureArray;
 import org.epics.pvdata.pv.Scalar;
 import org.epics.pvdata.pv.ScalarType;
 import org.epics.pvdata.pv.StandardField;
+import org.epics.pvdata.pv.Status;
 import org.epics.pvdata.pv.Status.StatusType;
 import org.epics.pvdata.pv.Structure;
 import org.epics.pvdata.pv.StructureArrayData;
 import org.epics.pvaccess.server.rpc.RPCRequestException;
+import org.epics.pvaccess.server.rpc.RPCResponseCallback;
 import org.epics.pvaccess.server.rpc.RPCService;
+import org.epics.pvaccess.server.rpc.RPCServiceAsync;
+import org.epics.pvaccess.server.rpc.Service;
 import org.epics.pvdatabase.PVDatabase;
 import org.epics.pvdatabase.PVDatabaseFactory;
 import org.epics.pvdatabase.PVRecord;
@@ -62,7 +67,7 @@ public class ExampleRPCRecord extends PVRecord {
             boolean haveControl = pvRecord.takeControl();
             if (!haveControl)
                 throw new RPCRequestException(StatusType.ERROR,
-                "I'm busy");
+                "Device busy");
 
             PVStructureArray valueField = args.getSubField(PVStructureArray.class,
                   "value");
@@ -109,6 +114,86 @@ public class ExampleRPCRecord extends PVRecord {
         }
     }
 
+    static class RPCServiceAsyncImpl implements RPCServiceAsync {
+
+        private ExampleRPCRecord pvRecord;
+	    private final static Status statusOk = StatusFactory.
+            getStatusCreate().getStatusOK();
+
+        RPCServiceAsyncImpl(ExampleRPCRecord record) {
+                pvRecord = record;
+
+        }
+
+	    public void request(PVStructure args, RPCResponseCallback callback)
+        {
+            boolean haveControl = pvRecord.takeControl();
+            if (!haveControl)
+            {
+                handleError("Device busy", callback, haveControl);
+                return;
+            }
+
+            PVStructureArray valueField = args.getSubField(PVStructureArray.class,
+                  "value");
+            if (valueField == null)
+            {
+                handleError("No structure array value field", callback, haveControl);
+                return;
+            }
+
+            Structure valueFieldStructure = valueField.
+                getStructureArray().getStructure();
+
+            Scalar xField = valueFieldStructure.getField(Scalar.class, "x");
+            if (xField == null || xField.getScalarType() != ScalarType.pvDouble)
+            {
+                handleError("value field's structure has no double field x", callback, haveControl);
+                return;
+            }
+
+            Scalar yField = valueFieldStructure.getField(Scalar.class, "y");
+            if (yField == null || yField.getScalarType() != ScalarType.pvDouble)
+            {
+                handleError("value field's structure has no double field y", callback, haveControl);
+                return;
+            }
+
+            int length = valueField.getLength();
+            StructureArrayData sad = new StructureArrayData();
+            valueField.get(0, length, sad);
+        
+            for (int i = 0; i < length; i++)
+            {
+        	    double x = sad.data[i].getSubField(PVDouble.class, "x").get();
+        	    double y = sad.data[i].getSubField(PVDouble.class, "y").get();
+                pvRecord.put(x,y);
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                   handleError("Error in thread sleeping", callback, haveControl);
+                   return;
+                }
+            }
+
+            Structure topStructure = fieldCreate.createFieldBuilder().
+                createStructure();
+
+            PVStructure result = pvDataCreate.createPVStructure(topStructure);
+            pvRecord.releaseControl();
+            callback.requestDone(statusOk, result);
+        }
+
+        private void handleError(String message, RPCResponseCallback callback, boolean haveControl)
+        {
+            if (haveControl)
+                pvRecord.releaseControl();
+            Status status = StatusFactory.getStatusCreate().
+                createStatus(StatusType.ERROR, message, null);
+            callback.requestDone(status, null);
+        }
+    }
+
     public static ExampleRPCRecord create(String recordName)
     {
         FieldBuilder fb = fieldCreate.createFieldBuilder();
@@ -146,8 +231,9 @@ public class ExampleRPCRecord extends PVRecord {
         }
     }
 
-    public RPCService getService(PVStructure pvRequest)
+    public Service getService(PVStructure pvRequest)
     {
-        return new RPCServiceImpl(this);
+        //return new RPCServiceImpl(this);
+        return new RPCServiceAsyncImpl(this);
     }
 }
