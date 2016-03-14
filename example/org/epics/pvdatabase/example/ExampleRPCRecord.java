@@ -140,6 +140,10 @@ public class ExampleRPCRecord extends PVRecord {
         process();
         endGroupPut();
         unlock();
+        if(getTraceLevel() > 1)
+        {
+            System.out.println("put(" + x + "," + y + ")");
+        }
     }
 
     public RPCService getService(PVStructure pvRequest)
