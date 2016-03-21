@@ -39,6 +39,11 @@ import org.epics.pvaccess.client.ChannelRPC;
 import org.epics.pvaccess.client.ChannelRPCRequester;
 import org.epics.pvaccess.client.ChannelRequester;
 import org.epics.pvaccess.client.GetFieldRequester;
+import org.epics.pvaccess.server.rpc.RPCRequestException;
+import org.epics.pvaccess.server.rpc.RPCResponseCallback;
+import org.epics.pvaccess.server.rpc.RPCService;
+import org.epics.pvaccess.server.rpc.RPCServiceAsync;
+import org.epics.pvaccess.server.rpc.Service;
 import org.epics.pvdata.copy.PVCopy;
 import org.epics.pvdata.copy.PVCopyFactory;
 import org.epics.pvdata.factory.ConvertFactory;
@@ -407,11 +412,10 @@ public class ChannelProviderLocalFactory  {
          * @see org.epics.pvaccess.client.Channel#createChannelRPC(org.epics.pvaccess.client.ChannelRPCRequester, org.epics.pvdata.pv.PVStructure)
          */
         @Override
-		public ChannelRPC createChannelRPC(
-				ChannelRPCRequester channelRPCRequester, PVStructure pvRequest)
+        public ChannelRPC createChannelRPC(
+                ChannelRPCRequester channelRPCRequester, PVStructure pvRequest)
         {
-            channelRPCRequester.channelRPCConnect(notImplementedStatus,null);
-            return null;
+            return ChannelRPCLocal.create(this, channelRPCRequester, pvRequest, pvRecord);
         }
 		/* (non-Javadoc)
          * @see org.epics.pvaccess.client.Channel#createMonitor(org.epics.pvdata.monitor.MonitorRequester, org.epics.pvdata.pv.PVStructure, org.epics.pvdata.pv.PVStructure)
@@ -911,6 +915,190 @@ public class ChannelProviderLocalFactory  {
             }
         }
         
+    private static class ChannelRPCLocal implements ChannelRPC, RPCResponseCallback
+    {
+        private boolean isDestroyed = false;
+        private final Channel channel;
+        private final ChannelRPCRequester channelRPCRequester;
+        private final PVStructure pvRequest;
+        private final PVRecord pvRecord;
+        private volatile boolean lastRequest = false;
+        private final Service service;
+        private ReentrantLock lock = new ReentrantLock();
+
+        
+        private ChannelRPCLocal(Channel channel, ChannelRPCRequester channelRPCRequester,
+                               PVStructure pvRequest, PVRecord pvRecord, Service service) {
+            this.channel = channel;
+            this.channelRPCRequester = channelRPCRequester;
+            this.pvRequest = pvRequest;
+            this.pvRecord = pvRecord;
+            this.service = service;
+        }
+
+        static ChannelRPCLocal create(
+            ChannelLocal channelLocal,
+            ChannelRPCRequester channelRPCRequester,
+            PVStructure pvRequest,
+            PVRecord pvRecord)
+        {
+            ChannelRPCLocal channelRPC = null;
+            final Service service = pvRecord.getService(pvRequest);
+
+            if (service == null)
+            {
+                channelRPCRequester.channelRPCConnect(notImplementedStatus, null);
+            }
+            else
+            {
+                channelRPC = new ChannelRPCLocal(channelLocal, channelRPCRequester, pvRequest,
+                    pvRecord, service);
+                channelRPCRequester.channelRPCConnect(okStatus,channelRPC);
+                if(pvRecord.getTraceLevel()>0) {
+                    System.out.println("ChannelRPCLocal::create recordName " + pvRecord.getRecordName());
+                }
+            }
+
+            return channelRPC;
+        }
+
+        public void lastRequest()
+        {
+            lastRequest = true;
+        }
+        
+        public Channel getChannel()
+        {
+            return channel;
+        }
+
+        private void processRequest(RPCService rpcService, PVStructure pvArgument)
+        {
+            PVStructure result = null;
+            Status status = okStatus;
+            boolean ok = true;
+            try
+            {
+                result = rpcService.request(pvArgument);
+            }
+            catch (RPCRequestException rre)
+            {
+                status =
+                    statusCreate.createStatus(
+                        rre.getStatus(),
+                        rre.getMessage(),
+                        rre);
+                ok = false;
+            }
+            catch (Throwable th)
+            {
+                // handle user unexpected errors
+                status = 
+                    statusCreate.createStatus(StatusType.FATAL,
+                                "Unexpected exception caught while calling RPCService.request(PVStructure).",
+                                th);
+                ok = false;
+            }
+        
+            // check null result
+            if (ok && result == null)
+            {
+                status =
+                    statusCreate.createStatus(
+                            StatusType.FATAL,
+                            "RPCService.request(PVStructure) returned null.",
+                            null);
+            }
+            
+            channelRPCRequester.requestDone(status, this, result);
+            
+            if (lastRequest)
+                destroy();
+        }
+        
+        @Override
+        public void requestDone(Status status, PVStructure result) {
+            channelRPCRequester.requestDone(status, this, result);
+            
+            if (lastRequest)
+                destroy();
+        }
+        
+        private void processRequest(RPCServiceAsync rpcServiceAsync, PVStructure pvArgument)
+        {
+            try
+            {
+                rpcServiceAsync.request(pvArgument, this);
+            }
+            catch (Throwable th)
+            {
+                // handle user unexpected errors
+                Status status = 
+                    statusCreate.createStatus(StatusType.FATAL,
+                                "Unexpected exception caught while calling RPCService.request(PVStructure).",
+                                th);
+
+                channelRPCRequester.requestDone(status, this, null);
+                
+                if (lastRequest)
+                    destroy();
+            }
+        
+            // we wait for callback to be called
+        }
+
+        @Override
+        public void request(final PVStructure pvArgument) {
+
+            if(isDestroyed) {
+                channelRPCRequester.requestDone(requestDestroyedStatus, this, null);
+                return;
+            }
+
+            if(pvRecord.getTraceLevel()>1) {
+                System.out.println("ChannelRPCLocal::request");
+            }
+
+            if (service instanceof RPCService)
+            {
+                final RPCService rpcService = (RPCService)service;
+                processRequest(rpcService, pvArgument);
+            }
+            else if (service instanceof RPCServiceAsync)
+            {
+                final RPCServiceAsync rpcServiceAsync = (RPCServiceAsync)service;
+                processRequest(rpcServiceAsync, pvArgument);
+            }
+            else
+                throw new RuntimeException("unsupported Service type");
+        }
+
+        @Override
+        public void destroy() {
+            lock.lock();
+            try {
+                if(isDestroyed) return;
+                isDestroyed = true;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void lock() {
+            // noop
+        }
+
+        @Override
+        public void unlock() {
+            // noop
+        }
+
+        @Override
+        public void cancel() {
+        }
+}
+
         private static class ChannelArrayLocal implements ChannelArray {
             private boolean isDestroyed = false;
             private ChannelLocal channelLocal;
