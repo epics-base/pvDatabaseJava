@@ -22,6 +22,7 @@ import org.epics.pvdata.pv.PostHandler;
 import org.epics.pvdata.pv.Type;
 import org.epics.pvdata.copy.*;
 import org.epics.pvdata.copy.PVCopyTraverseMasterCallback;
+import org.epics.pvaccess.server.rpc.Service;
 
 
 /**
@@ -302,6 +303,15 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
         } finally {
             lock.unlock();
         }
+    }
+    /**
+     * Return a service corresponding to the specified request PVStructure.
+     * @param pvRequest The request PVStructure 
+     * @return The corresponding service
+     */
+    public Service getService(PVStructure pvRequest)
+    {
+        return null;
     }
     /**
      * Begin a group of related puts.
