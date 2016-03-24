@@ -82,6 +82,7 @@ public class ContextLocal implements Runnable{
     public void destroy()
     {
         try {
+            context.shutdown();
             context.destroy();
             channelProvider.destroy();
         } catch (Throwable th) {
