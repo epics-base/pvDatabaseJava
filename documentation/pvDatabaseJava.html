@@ -36,29 +36,8 @@
 
 <div class="head">
 <h1>pvDatabaseJava</h1>
-<!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date. -->
+<h2 class="nocount">Release 4.2 - 2016.03.21</h2>
 
-<h2 class="nocount">EPICS v4 Working Group, Working Draft, 04-Feb-2015</h2>
-<dl>
-    <dt>Latest version:</dt>
-    <dd><a
-       href="pvDatabaseJava.html">pvDatabaseJava.html</a>
-    </dd>
-    <dt>This version:</dt>
-    <dd><a
-       href= "pvDatabaseJava20150204.html">pvDatabaseJava20150204.html
-    </a> </dd>
-    <dt>Previous version:</dt>
-    <dd><a
-       href= "pvDatabaseJava20150130.html">pvDatabaseJava20150130.html
-    </a> </dd>
-  <dt>Editors:</dt>
-    <dd>Marty Kraimer, BNL</dd>
-</dl>
-
-  <p class="copyright">This product is made available subject to acceptance of the <a
-href="http://epics-pvdata.sourceforge.net/LICENSE.html">EPICS open source license.</a></p>
-<hr />
 
 <h2 class="nocount">Abstract</h2>
 
@@ -69,45 +48,12 @@ pvData. The framework includes a complete implementation of ChannelProvider as d
 The framework can be extended in order to create record instances that implements services.
 The minimum that an extension must provide is a top level PVStructure and a process method.
 </p>
+  <!-- last para of Abstract is boilerplate reference to EPICS -->
+      <p>For more information about EPICS generally, please refer to the home page of the <a
+       href="http://www.aps.anl.gov/epics/">Experimental Physics and Industrial
+      Control System</a>.</p>
 
-<p>EPICS version 4 is a set of related products in the EPICS
-V4 control system programming environment:<br />
-<a href="http://epics-pvdata.sourceforge.net/relatedDocumentsV4.html">relatedDocumentsV4.html</a>
-</p>
 
-
-<h2 class="nocount">Status of this Document</h2>
-
-<p>This is the 04-Feb-2015 version of of pvDatabaseJava.</p>
-<p>
-This version is a complete implementation of what is described in this manual.
-</p>
-<p>Since the last version:</p>
-<dl>
-  <dt>SimpleExample</dt>
-    <dd>This is a new example that creates three different types of records,
-      creates the database and starts pvAccess all in one source file.
-    </dd>
-   <dt>addListener</dt>
-     <dd>Before ChannelProviderLocalFactory had to
-      call PVRecordField::addListener with strange rules about locking.
-      Now the implementation in PVRecord does this.
-     </dd>
-</dl>
-<p>The following will be done next:</p>
-<dl>
-  <dt>Update pvDatabaseCPP</dt>
-    <dd>pvDatabaseJava is based on pvDatabaseCPP.
-     Development resulted in a better implementation of some components.
-     Similar changes should be made in pvDatabaseCPP.
-    </dd>
-   <dt>pvDatabaseJava.html</dt>
-     <dd>More work on this document.</dd>
-   <dt>Regression Tests</dt>
-      <dd>pvDatabase, both Java and CPP, have examples but
-       no regression tests.
-      </dd>
-</dl>
 </div>
 
 <div id="toc">
@@ -117,6 +63,14 @@ This version is a complete implementation of what is described in this manual.
 
 
 <h2>Introduction</h2>
+<h3>Overview</h3>
+<p>The main purpose of this project to make it easier to implement services that are accessed via pvAccess.
+</p>
+<p>
+This project supplies a complete implementation of the server side of pvAccess,
+which has the provider name <b>local</b>.
+</p>
+
 <p>The main purpose of this project to make it easier to implement services that are accessed via pvAccess.
 This project supplies a complete implementation of the server side of pvAccess.
 All that a service has to provide is a top level PVStructure and a process method.
@@ -178,9 +132,11 @@ It can  override the following methods:</p>
      <dd>This releases any resources used by the implementation.
      </dd>
 </dl>
-<p>JavaDoc is available at <a
-href="./html/index.html">javaDoc</a></p>
-<h2>Getting started</h2>
+<h3>Getting started</h3>
+<p>A separate project <b>exampleJava</b> has examples for <b>pvDatabaseJava</b>
+and for <b>pvaClientJava</b>.
+See it for examples.
+</p>
 <h3>SimpleExample</h3>
 <p>This is an example that creates PVRecords, adds them to the database,
 and starts pvAccess all in a single source file.</p>
@@ -309,49 +265,6 @@ public class SimpleExample {
         context.start(true);
     }
 }
-</pre>
-<h3>Hello World</h3>
-<p>pvDatabaseJava provides a pom.xml files so that maven can be used to
-build it.
-</p>
-<p>One of the examples is HelloExample.
-It can be run via the shell script provided with this project.
-</p>
-<pre>
-mrk&gt; pwd
-/home/hg/pvDatabaseJava/shell
-source source
-java org.epics.pvdatabase.pva.example.HelloExample \
-    -recordName helloExample \
-    -traceLevel 1
-</pre>
-<p>You should see something like the following:</p>
-<pre>
-pvAccess Server v4.1.0-SNAPSHOT
-CLASS   : org.epics.pvaccess.server.impl.remote.ServerContextImpl
-VERSION : pvAccess Server v4.1.0-SNAPSHOT
-CHANNEL PROVIDER : local
-BEACON_ADDR_LIST : 
-AUTO_BEACON_ADDR_LIST : true
-BEACON_PERIOD : 15.0
-BROADCAST_PORT : 5076
-SERVER_PORT : 5075
-RCV_BUFFER_SIZE : 16384
-IGNORE_ADDR_LIST: 
-STATE : INITIALIZED
-
-Running server...
-</pre>
-<p>Then in another window execute a pvput and pvget as follows:</p>
-<pre>
-mrk&gt; pvput -r "argument.value" helloExample
-...
-mrk&gt; pvget -r "result.value" helloExample
-helloExample
-structure 
-    structure result
-        string value Hello World
-mrk&gt; 
 </pre>
 
 <h2>Guidelines For Developing PVRecords</h2>
@@ -520,123 +433,9 @@ and channel except for channelRPC, which is implement by pvAccess as a separate
 channel provider.</p>
 <p>
 It is not of interest to client or service implementers.
-See the JavaDoc
-<a href="./html/index.html">javaDoc</a>
-for details.
+See the JavaDoc for details.
 </p>
-<h2>org.epics.pvdatabase.example</h2>
-<p>This package has three example service records.</p>
-<dl>
-  <dt>HelloRecord</dt>
-    <dd>
-       This is an example of a record that is best accessed via
-      a channelPutGet. Process generates
-      a result that is "Hello " + argument.value.
-    </dd>
-  <dt>AplusBRecord</dt>
-    <dd>
-      This has three PVDouble fields, named a, v, and c.
-      Process sets c = a + b.
-    </dd>
-  <dt>ArrayServerRecord</dt>
-    <dd>
-     This is an example of a service that is a data source.
-     It has a thread that periodically changes the data 
-     for an array of doubles.
-     It than processes the record which puts
-     the new array data into the value field.
-    </dd>
-</dl>
-<h2>org.epics.pvdatabase.pva.example</h2>
-<dl>
-  <dt>SimpleExample</dt>
-    <dd>This was discussed above.</dd>
-  <dt>ExampleDatabase</dt>
-    <dd>
-     This is creates four PVRecords.
-<pre>
-An AplusB record.
-An ArrayServerRecord
-A standardPVField with a value that is a PVDouble.
-A standardPVField with a value that is a PVDoubleArray.
-</pre>
-    </dd>
-  <dt>HelloExample</dt>
-    <dd>
-      This creates a single HelloRecord.
-    </dd>
-</dl>
-<h2>org.epics.pvdatabase.perform</h2>
-<dl>
-  <dt>DoubleArrayPut</dt>
-    <dd>
-     This is a client that connects to a standardPVField with a value
-     that is a PVDoubleArray.
-     It then it repeatedly does puts with different array
-     sizes and value.
-     It periodically destroys the connection and then reconnects.
-    </dd>
-  <dt>DoublePut</dt>
-    <dd>
-     This is a client that connects to a standardPVField with a value
-     that is a PVDouble.
-     It then it repeatedly does puts with different values.
-     It periodically destroys the connection and then reconnects.
-    </dd>
-  <dt>MonitorCount</dt>
-    <dd>
-     This is a client that monitors an arbitrary PVRecord.
-     It periodically destroys the connection and then reconnects.
-    </dd>
-</dl>
-<h2>shell</h2>
-<p>This is a set of files that show how to use the command line
-to start the example databases and the perform clients.
-These have only been tested on linux.</p>
-<p>To use them go to this directory, or better copy the entire directory
-to another location and then:</p>
-<ul>
-   <li>edit source so the WORKSPACE references where You have pvDataJava,
-pvAccessJava, easyPVAJava, and pvDatabaseJava.</li>
-   <li>Execute:
-<pre>
-source source
-</pre>
-    </li>
-    <li>Look at the example of what you want to do,
-      Each shows the default args for each command.
-    </li>
-    <li>Run the command with the arguments You want.</li>
-</ul>
 
-<dl>
-  <dt>source</dt>
-    <dd>
-      definitions for defining the environment variable CLASSPATH.
-    </dd>
-  <dt>exampleHello</dt>
-    <dd>
-      Starts the HelloExample database,
-    </dd>
-  <dt>exampleDatabase</dt>
-    <dd>
-      Starts the ExampleDatabase.
-       To start the other examples replace ExampeDatabase 
-       by AplusBRecord, HelloExample or SimpleExample.
-    </dd>
-  <dt>doublePut</dt>
-    <dd>
-     Runs the DoublePut client.
-    </dd>
-  <dt>doubleArrayPut</dt>
-    <dd>
-     Runs the DoubleArrayPut client.
-    </dd>
-  <dt>monitorCount</dt>
-    <dd>
-     Runs the MonitorCount client.
-    </dd>
-</dl>
 </div>
 </body>
 </html>
