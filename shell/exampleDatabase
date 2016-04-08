@@ -1,6 +1,0 @@
-#! /bin/bash
-source source
-java org.epics.pvdatabase.pva.example.ExampleDatabase \
-    -prefix "" \
-    -traceLevel 1
-# Note that ExampeDatabase can be replaced by AplusBRecord, HelloExample or SimpleExample
