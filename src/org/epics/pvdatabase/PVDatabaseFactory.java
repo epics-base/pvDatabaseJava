@@ -25,7 +25,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  */
 public class PVDatabaseFactory {
-    
+
     /**
      * Get the master database.
      * Currently only a single database is possible. and is named master.
@@ -35,17 +35,17 @@ public class PVDatabaseFactory {
         if(master==null) master = new Database();
         return master;
     }
-    
+
     private static Database master = null;
-    
+
     private static class Database implements PVDatabase {
-       
+
         private LinkedHashMap<String,PVRecord> recordMap = new LinkedHashMap<String,PVRecord>();
         private ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
         private boolean isDestroyed = false;
-        
+
         private Database() {}
-        
+
         /* (non-Javadoc)
          * @see org.epics.pvdatabase.PVDatabase#destroy()
          */

@@ -14,14 +14,14 @@ import org.epics.pvdata.pv.PVStructure;
  *
  */
 public interface PVRecordStructure extends PVRecordField {
-	/**
-	 * Get the subfields.
-	 * @return The array of subfields;
-	 */
-	PVRecordField[] getPVRecordFields();
-	/**
-	 * Get the PVStructure.
-	 * @return The interface.
-	 */
-	PVStructure getPVStructure();
+    /**
+     * Get the subfields.
+     * @return The array of subfields;
+     */
+    PVRecordField[] getPVRecordFields();
+    /**
+     * Get the PVStructure.
+     * @return The interface.
+     */
+    PVStructure getPVStructure();
 }

@@ -15,17 +15,17 @@ import org.epics.pvdata.pv.PVField;
  *
  */
 public interface PVRecordField {
-	
-	/**
-	 * Get the parent of this field.
-	 * @return The parent interface or null if top level structure.
-	 */
-	PVRecordStructure getParent();
-	/**
-	 * Get the PVField.
-	 * @return The PVField interface.
-	 */
-	PVField getPVField();
+
+    /**
+     * Get the parent of this field.
+     * @return The parent interface or null if top level structure.
+     */
+    PVRecordStructure getParent();
+    /**
+     * Get the PVField.
+     * @return The PVField interface.
+     */
+    PVField getPVField();
     /**
      * Get the fullFieldName, i.e. the complete hierarchy.
      * @return The name.
