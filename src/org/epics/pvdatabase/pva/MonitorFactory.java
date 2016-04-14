@@ -36,56 +36,56 @@ import org.epics.pvdatabase.PVRecordStructure;
  * 2015.01
  */
 public class MonitorFactory {
-	
-	/**
-	 * Create a monitor.
-	 * @param pvRecord The record to monitor.
-	 * @param monitorRequester The requester.
-	 * @param pvRequest Then request structure defining the monitor options.
-	 * @return The Monitor interface.
-	 */
-	public static Monitor create(PVRecord pvRecord,MonitorRequester monitorRequester,PVStructure pvRequest)
-	{
-		MonitorLocal monitor = new MonitorLocal(pvRecord,monitorRequester);
-		if(!monitor.init(pvRequest)) {
-			monitorRequester.monitorConnect(failedToCreateMonitorStatus, null, null);
-			return null;
-		}
-		return monitor;
-	}
-	
-	
-	private static final StatusCreate statusCreate = StatusFactory.getStatusCreate();
+
+    /**
+     * Create a monitor.
+     * @param pvRecord The record to monitor.
+     * @param monitorRequester The requester.
+     * @param pvRequest Then request structure defining the monitor options.
+     * @return The Monitor interface.
+     */
+    public static Monitor create(PVRecord pvRecord,MonitorRequester monitorRequester,PVStructure pvRequest)
+    {
+        MonitorLocal monitor = new MonitorLocal(pvRecord,monitorRequester);
+        if(!monitor.init(pvRequest)) {
+            monitorRequester.monitorConnect(failedToCreateMonitorStatus, null, null);
+            return null;
+        }
+        return monitor;
+    }
+
+
+    private static final StatusCreate statusCreate = StatusFactory.getStatusCreate();
     private static final Status okStatus = statusCreate.getStatusOK();
     private static final Status failedToCreateMonitorStatus = statusCreate.createStatus(StatusType.FATAL, "failed to create monitor", null);
     private static final Status wasDestroyedStatus = statusCreate.createStatus(StatusType.ERROR,"was destroyed",null);
     private static final Status alreadyStartedStatus = statusCreate.createStatus(StatusType.WARNING,"already started",null);
     private static final Status notStartedStatus = statusCreate.createStatus(StatusType.WARNING,"not started",null);
-	private static final BitSetUtil bitSetUtil = BitSetUtilFactory.getCompressBitSet();
-	
-	
-	
-	private static class MonitorLocal implements Monitor, PVListener {
-	    
-		enum MonitorState {idle,active,destroyed}
-		
-		private final MonitorRequester monitorRequester;
-		private final PVRecord pvRecord;
-		private MonitorState state = MonitorState.idle;
-		private PVCopy pvCopy = null;
-		private MonitorQueue queue = null;
-		private MonitorElement activeElement;
-		
+    private static final BitSetUtil bitSetUtil = BitSetUtilFactory.getCompressBitSet();
+
+
+
+    private static class MonitorLocal implements Monitor, PVListener {
+
+        enum MonitorState {idle,active,destroyed}
+
+        private final MonitorRequester monitorRequester;
+        private final PVRecord pvRecord;
+        private MonitorState state = MonitorState.idle;
+        private PVCopy pvCopy = null;
+        private MonitorQueue queue = null;
+        private MonitorElement activeElement;
+
         private boolean isGroupPut = false;
         private boolean dataChanged = false;
         private ReentrantLock lock = new ReentrantLock();
-		
-        
-		private MonitorLocal(PVRecord pvRecord,MonitorRequester monitorRequester) {
-			this.pvRecord = pvRecord;
-			this.monitorRequester = monitorRequester;
-		}
-		
+
+
+        private MonitorLocal(PVRecord pvRecord,MonitorRequester monitorRequester) {
+            this.pvRecord = pvRecord;
+            this.monitorRequester = monitorRequester;
+        }
+
         /* (non-Javadoc)
          * @see org.epics.pvdata.misc.Destroyable#destroy()
          */
@@ -97,7 +97,7 @@ public class MonitorFactory {
             lock.lock();
             try {
                 if(state==MonitorState.destroyed) return;
-                
+
             } finally {
                 lock.unlock();
             }
@@ -114,7 +114,7 @@ public class MonitorFactory {
             }
             pvCopy = null;
         }
-       
+
         /* (non-Javadoc)
          * @see org.epics.pvdata.monitor.Monitor#start()
          */
@@ -127,7 +127,7 @@ public class MonitorFactory {
             try {
                 if(state==MonitorState.destroyed) return wasDestroyedStatus;
                 if(state==MonitorState.active) return alreadyStartedStatus;
-                
+
             } finally {
                 lock.unlock();
             }
@@ -152,7 +152,7 @@ public class MonitorFactory {
             }
             return okStatus;
         }
-       
+
         /* (non-Javadoc)
          * @see org.epics.pvdata.monitor.Monitor#stop()
          */
@@ -172,58 +172,58 @@ public class MonitorFactory {
             pvRecord.removeListener(this,pvCopy);
             return okStatus;
         }
-		/* (non-Javadoc)
-		 * @see org.epics.pvdata.monitor.Monitor#poll()
-		 */
-		public MonitorElement poll() {
-		    if(pvRecord.getTraceLevel()>0)
+        /* (non-Javadoc)
+         * @see org.epics.pvdata.monitor.Monitor#poll()
+         */
+        public MonitorElement poll() {
+            if(pvRecord.getTraceLevel()>0)
             {
                 System.out.println("MonitorLocal::poll state " + state);    
             }
-		    synchronized(queue) {
-		        if(state!=MonitorState.active) return null;
-		        return queue.getUsed();
-		    }
-		}
-		/* (non-Javadoc)
-		 * @see org.epics.pvdata.monitor.Monitor#release(org.epics.pvdata.monitor.MonitorElement)
-		 */
-		public void release(MonitorElement currentElement) {
-		    if(pvRecord.getTraceLevel()>0)
+            synchronized(queue) {
+                if(state!=MonitorState.active) return null;
+                return queue.getUsed();
+            }
+        }
+        /* (non-Javadoc)
+         * @see org.epics.pvdata.monitor.Monitor#release(org.epics.pvdata.monitor.MonitorElement)
+         */
+        public void release(MonitorElement currentElement) {
+            if(pvRecord.getTraceLevel()>0)
             {
                 System.out.println("MonitorLocal::release state " + state);    
             }
-		    synchronized(queue) {
-		        if(state!=MonitorState.active) return;
-		        queue.releaseUsed(currentElement);
-		    }
-		}
-		
-		private void releaseActiveElement() {
-		    if(pvRecord.getTraceLevel()>0)
+            synchronized(queue) {
+                if(state!=MonitorState.active) return;
+                queue.releaseUsed(currentElement);
+            }
+        }
+
+        private void releaseActiveElement() {
+            if(pvRecord.getTraceLevel()>0)
             {
                 System.out.println("MonitorLocal::releaseActiveElement state " + state);    
             }
-		    synchronized(queue) {
-		        if(state!=MonitorState.active) return;
-		        MonitorElement newActive = queue.getFree();
-		        if(newActive==null) return;
-		        pvCopy.updateCopyFromBitSet(activeElement.getPVStructure(), activeElement.getChangedBitSet());
-		        bitSetUtil.compress(activeElement.getChangedBitSet(),activeElement.getPVStructure());
-		        bitSetUtil.compress(activeElement.getOverrunBitSet(),activeElement.getPVStructure());
-		        queue.setUsed(activeElement);
-		        activeElement = newActive;
-		        activeElement.getChangedBitSet().clear();
-		        activeElement.getOverrunBitSet().clear();
-		    }
-		    monitorRequester.monitorEvent(this);
-		    return;
-		}	
-        
+            synchronized(queue) {
+                if(state!=MonitorState.active) return;
+                MonitorElement newActive = queue.getFree();
+                if(newActive==null) return;
+                pvCopy.updateCopyFromBitSet(activeElement.getPVStructure(), activeElement.getChangedBitSet());
+                bitSetUtil.compress(activeElement.getChangedBitSet(),activeElement.getPVStructure());
+                bitSetUtil.compress(activeElement.getOverrunBitSet(),activeElement.getPVStructure());
+                queue.setUsed(activeElement);
+                activeElement = newActive;
+                activeElement.getChangedBitSet().clear();
+                activeElement.getOverrunBitSet().clear();
+            }
+            monitorRequester.monitorEvent(this);
+            return;
+        }	
 
-		@Override
+
+        @Override
         public void dataPut(PVRecordField pvRecordField) {
-		    if(pvRecord.getTraceLevel()>0) {
+            if(pvRecord.getTraceLevel()>0) {
                 System.out.println("PVCopyMonitor::dataPut(pvRecordField)");
             }
             if(state!=MonitorState.active) return;
@@ -319,47 +319,47 @@ public class MonitorFactory {
         }
 
         private boolean init(PVStructure pvRequest) {
-		    PVField pvField = null;
-			int queueSize = 2;
-			PVStructure pvOptions = pvRequest.getSubField(PVStructure.class,"record._options");
-			if(pvOptions!=null) {
-			    PVString pvString = pvOptions.getSubField(PVString.class, "queueSize");
-			    if(pvString!=null) {
-			        String value = pvString.get();
-	                try {
-	                    queueSize = Integer.parseInt(value);
-	                } catch (NumberFormatException e) {
-	                    monitorRequester.message("queueSize " + e.getMessage(), MessageType.error);
-	                    return false;
-	                }
-			    }
-			}
-			pvField = pvRequest.getSubField("field");
-			if(pvField==null) {
-				pvCopy = PVCopyFactory.create(pvRecord.getPVRecordStructure().getPVStructure(), pvRequest, "");
-				if(pvCopy==null) {
-					monitorRequester.message("illegal pvRequest", MessageType.error);
-					return false;
-				}
-			} else {
-				if(!(pvField instanceof PVStructure)) {
-					monitorRequester.message("illegal pvRequest.field", MessageType.error);
-					return false;
-				}
-				pvCopy = PVCopyFactory.create(pvRecord.getPVRecordStructure().getPVStructure(), pvRequest, "field");
-				if(pvCopy==null) {
-					monitorRequester.message("illegal pvRequest", MessageType.error);
-					return false;
-				}
-			}
-			if(queueSize<2) queueSize = 2;
-			MonitorElement[] elementArray = new MonitorElement[queueSize];
-			for(int i=0; i<queueSize; ++i) {
-			    elementArray[i] = MonitorQueueFactory.createMonitorElement(pvCopy.createPVStructure());
-			}
-			queue = MonitorQueueFactory.create(elementArray);
-			monitorRequester.monitorConnect(okStatus, this, pvCopy.getStructure());
-			return true;
-		}
-	}
+            PVField pvField = null;
+            int queueSize = 2;
+            PVStructure pvOptions = pvRequest.getSubField(PVStructure.class,"record._options");
+            if(pvOptions!=null) {
+                PVString pvString = pvOptions.getSubField(PVString.class, "queueSize");
+                if(pvString!=null) {
+                    String value = pvString.get();
+                    try {
+                        queueSize = Integer.parseInt(value);
+                    } catch (NumberFormatException e) {
+                        monitorRequester.message("queueSize " + e.getMessage(), MessageType.error);
+                        return false;
+                    }
+                }
+            }
+            pvField = pvRequest.getSubField("field");
+            if(pvField==null) {
+                pvCopy = PVCopyFactory.create(pvRecord.getPVRecordStructure().getPVStructure(), pvRequest, "");
+                if(pvCopy==null) {
+                    monitorRequester.message("illegal pvRequest", MessageType.error);
+                    return false;
+                }
+            } else {
+                if(!(pvField instanceof PVStructure)) {
+                    monitorRequester.message("illegal pvRequest.field", MessageType.error);
+                    return false;
+                }
+                pvCopy = PVCopyFactory.create(pvRecord.getPVRecordStructure().getPVStructure(), pvRequest, "field");
+                if(pvCopy==null) {
+                    monitorRequester.message("illegal pvRequest", MessageType.error);
+                    return false;
+                }
+            }
+            if(queueSize<2) queueSize = 2;
+            MonitorElement[] elementArray = new MonitorElement[queueSize];
+            for(int i=0; i<queueSize; ++i) {
+                elementArray[i] = MonitorQueueFactory.createMonitorElement(pvCopy.createPVStructure());
+            }
+            queue = MonitorQueueFactory.create(elementArray);
+            monitorRequester.monitorConnect(okStatus, this, pvCopy.getStructure());
+            return true;
+        }
+    }
 }
