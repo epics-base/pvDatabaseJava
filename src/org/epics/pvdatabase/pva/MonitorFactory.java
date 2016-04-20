@@ -121,7 +121,7 @@ public class MonitorFactory {
         public Status start() {
             if(pvRecord.getTraceLevel()>0)
             {
-                System.out.println("MonitorLocal::stop state " + state);    
+                System.out.println("MonitorLocal::start state " + state);    
             }
             lock.lock();
             try {
@@ -293,7 +293,7 @@ public class MonitorFactory {
         @Override
         public void endGroupPut(PVRecord pvRecord) {
             if(pvRecord.getTraceLevel()>0) {
-                System.out.println("PVCopyMonitor::endGroupPut");
+                System.out.println("PVCopyMonitor::endGroupPut dataChanged " + dataChanged);
             }
             if(state!=MonitorState.active) return;
             lock.lock();
