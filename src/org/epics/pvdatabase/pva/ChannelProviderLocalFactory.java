@@ -88,9 +88,17 @@ public class ChannelProviderLocalFactory  {
     /**
      * Get the single instance of the local channelProvider for the PVDatabase.
      * @return The ChannelProvider
+     * @deprecated
      */
     static public ChannelProvider getChannelServer() {
-        return ChannelProviderLocal.getChannelServer();
+        return getChannelProviderLocal();
+    }
+    /**
+     * Get the single instance of the local channelProvider for the PVDatabase.
+     * @return The ChannelProvider
+     */
+    static public ChannelProvider getChannelProviderLocal() {
+        return ChannelProviderLocal.getChannelProviderLocal();
     }
     private static final String providerName = "local";
     private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
@@ -137,7 +145,7 @@ public class ChannelProviderLocalFactory  {
          */
         @Override
         public ChannelProvider getChannelProvider() {
-            return getChannelServer();
+            return getChannelProviderLocal();
         } 
     }
 
@@ -149,7 +157,7 @@ public class ChannelProviderLocalFactory  {
         private boolean beingDestroyed = false;
         private ChannelFind channelFinder = new ChannelFindLocal();
 
-        private static synchronized ChannelProviderLocal getChannelServer() {
+        private static synchronized ChannelProviderLocal getChannelProviderLocal() {
             if (singleImplementation==null) {
                 singleImplementation = new ChannelProviderLocal();
                 ChannelProviderRegistryFactory.registerChannelProviderFactory(
@@ -213,13 +221,17 @@ public class ChannelProviderLocalFactory  {
             channelListRequester.channelListResult(okStatus, channelFinder, channelNamesSet, false);
             return channelFinder;
         }
+        /* (non-Javadoc)
+         * @see org.epics.pvaccess.client.ChannelProvider#createChannel(java.lang.String, org.epics.pvaccess.client.ChannelRequester, short, java.lang.String)
+         */
+        @Override
         public Channel createChannel(
                 String channelName,
                 ChannelRequester channelRequester,
                 short priority,
                 String address)
         {
-            if (address != null)
+            if (address != null && address.length()>0)
                 throw new IllegalArgumentException("address not allowed for local implementation");
             return createChannel(channelName, channelRequester, priority);
         }
@@ -231,8 +243,7 @@ public class ChannelProviderLocalFactory  {
             lock.lock();
             try {
                 PVRecord pvRecord = pvDatabase.findRecord(channelName);
-                boolean wasFound = ((pvRecord==null) ? false : true);
-                if(wasFound) {
+                if(pvRecord!=null) {
                     ChannelLocal channel = new ChannelLocal(this,pvRecord,channelRequester);
                     channelRequester.channelCreated(okStatus, channel);
                     pvRecord.addPVRecordClient(channel);
@@ -265,7 +276,7 @@ public class ChannelProviderLocalFactory  {
         @Override
         public void destroy() {
             if(pvRecord.getTraceLevel()>0) {
-                System.out.println("ChannelLocal::destroy() beingDestroyed " + isDestroyed.get());
+                System.out.println("ChannelLocal::destroy() isDestroyed " + isDestroyed.get());
             }
             if(!isDestroyed.compareAndSet(false, true)) return;
             pvRecord.removePVRecordClient(this);
@@ -278,7 +289,7 @@ public class ChannelProviderLocalFactory  {
             if(pvRecord.getTraceLevel()>0) {
                 System.out.println("ChannelLocal::detach()");
             }
-            destroy();
+            channelRequester.channelStateChange(this, ConnectionState.DESTROYED);
         }
         /* (non-Javadoc)
          * @see org.epics.pvdata.pv.Requester#getRequesterName()
@@ -344,7 +355,7 @@ public class ChannelProviderLocalFactory  {
          */
         @Override
         public AccessRights getAccessRights(PVField pvField) {
-            return null;
+            throw new UnsupportedOperationException("method getAccessRights not implemented");
         }
         /* (non-Javadoc)
          * @see org.epics.pvaccess.client.Channel#getField(org.epics.pvaccess.client.GetFieldRequester, java.lang.String)

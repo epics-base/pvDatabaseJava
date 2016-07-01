@@ -74,7 +74,7 @@ public class MonitorFactory {
         private MonitorState state = MonitorState.idle;
         private PVCopy pvCopy = null;
         private MonitorQueue queue = null;
-        private MonitorElement activeElement;
+        private MonitorElement activeElement = null;
 
         private boolean isGroupPut = false;
         private boolean dataChanged = false;
@@ -101,18 +101,13 @@ public class MonitorFactory {
             } finally {
                 lock.unlock();
             }
-            if(pvCopy!=null) pvRecord.removeListener(this,pvCopy);
+            if(state==MonitorState.active) stop();
             lock.lock();
             try {
                 state = MonitorState.destroyed;
             } finally {
                 lock.unlock();
             }
-            synchronized(queue)
-            {
-                queue.clear();
-            }
-            pvCopy = null;
         }
 
         /* (non-Javadoc)
@@ -176,7 +171,7 @@ public class MonitorFactory {
          * @see org.epics.pvdata.monitor.Monitor#poll()
          */
         public MonitorElement poll() {
-            if(pvRecord.getTraceLevel()>0)
+            if(pvRecord.getTraceLevel()>1)
             {
                 System.out.println("MonitorLocal::poll state " + state);    
             }
@@ -189,7 +184,7 @@ public class MonitorFactory {
          * @see org.epics.pvdata.monitor.Monitor#release(org.epics.pvdata.monitor.MonitorElement)
          */
         public void release(MonitorElement currentElement) {
-            if(pvRecord.getTraceLevel()>0)
+            if(pvRecord.getTraceLevel()>1)
             {
                 System.out.println("MonitorLocal::release state " + state);    
             }
@@ -200,7 +195,7 @@ public class MonitorFactory {
         }
 
         private void releaseActiveElement() {
-            if(pvRecord.getTraceLevel()>0)
+            if(pvRecord.getTraceLevel()>1)
             {
                 System.out.println("MonitorLocal::releaseActiveElement state " + state);    
             }
@@ -223,7 +218,7 @@ public class MonitorFactory {
 
         @Override
         public void dataPut(PVRecordField pvRecordField) {
-            if(pvRecord.getTraceLevel()>0) {
+            if(pvRecord.getTraceLevel()>1) {
                 System.out.println("PVCopyMonitor::dataPut(pvRecordField)");
             }
             if(state!=MonitorState.active) return;
@@ -251,7 +246,7 @@ public class MonitorFactory {
         @Override
         public void dataPut(PVRecordStructure requested,PVRecordField pvRecordField)
         {
-            if(pvRecord.getTraceLevel()>0) {
+            if(pvRecord.getTraceLevel()>1) {
                 System.out.println("PVCopyMonitor::dataPut(requested,pvRecordField)");
             }
             if(state!=MonitorState.active) return;
@@ -277,7 +272,7 @@ public class MonitorFactory {
 
         @Override
         public void beginGroupPut(PVRecord pvRecord) {
-            if(pvRecord.getTraceLevel()>0) {
+            if(pvRecord.getTraceLevel()>1) {
                 System.out.println("PVCopyMonitor::beginGroupPut");
             }
             if(state!=MonitorState.active) return;
@@ -292,7 +287,7 @@ public class MonitorFactory {
 
         @Override
         public void endGroupPut(PVRecord pvRecord) {
-            if(pvRecord.getTraceLevel()>0) {
+            if(pvRecord.getTraceLevel()>1) {
                 System.out.println("PVCopyMonitor::endGroupPut dataChanged " + dataChanged);
             }
             if(state!=MonitorState.active) return;
@@ -315,6 +310,7 @@ public class MonitorFactory {
             if(pvRecord.getTraceLevel()>1) {
                 System.out.println("PVCopyMonitor::unlisten");
             }
+            monitorRequester.unlisten(this);
             pvRecord.removeListener(this,pvCopy);
         }
 
