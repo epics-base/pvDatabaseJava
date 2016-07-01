@@ -15,7 +15,7 @@ package org.epics.pvdatabase;
  */
 
 import java.util.LinkedHashMap;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
@@ -54,13 +54,15 @@ public class PVDatabaseFactory {
             rwLock.writeLock().lock();
             try {
                 if(isDestroyed) return;
-                for(String key: recordMap.keySet()) {
-                    recordMap.get(key).destroy();
-                }
-                recordMap.clear();
+                isDestroyed = true;
             } finally {
                 rwLock.writeLock().unlock();
             }
+            for (Map.Entry<String, PVRecord> entry : recordMap.entrySet())
+            {
+                entry.getValue().destroy();
+            }
+            recordMap.clear();
         }
         /* (non-Javadoc)
          * @see org.epics.pvdatabase.PVDatabase#findRecord(java.lang.String)
@@ -97,9 +99,12 @@ public class PVDatabaseFactory {
         public boolean removeRecord(PVRecord record) {
             rwLock.writeLock().lock();
             try {
+                if(isDestroyed) return false;
                 String key = record.getRecordName();
-                if(recordMap.remove(key)!=null) return true;
-                return false;
+                PVRecord pvRecord = recordMap.remove(key);
+                if(pvRecord==null) return false;
+                pvRecord.destroy();
+                return true;
             } finally {
                 rwLock.writeLock().unlock();
             }

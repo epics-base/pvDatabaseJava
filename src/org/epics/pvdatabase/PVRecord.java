@@ -7,6 +7,9 @@ package org.epics.pvdatabase;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.epics.pvaccess.server.rpc.Service;
+import org.epics.pvdata.copy.PVCopy;
+import org.epics.pvdata.copy.PVCopyTraverseMasterCallback;
 import org.epics.pvdata.factory.ConvertFactory;
 import org.epics.pvdata.misc.LinkedList;
 import org.epics.pvdata.misc.LinkedListCreate;
@@ -20,9 +23,6 @@ import org.epics.pvdata.pv.PVField;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.PostHandler;
 import org.epics.pvdata.pv.Type;
-import org.epics.pvdata.copy.*;
-import org.epics.pvdata.copy.PVCopyTraverseMasterCallback;
-import org.epics.pvaccess.server.rpc.Service;
 
 
 /**
@@ -36,6 +36,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
     private static LinkedListCreate<PVListener> listenerListCreate = new LinkedListCreate<PVListener>();
     private static LinkedListCreate<PVRecordClient> clientListCreate = new LinkedListCreate<PVRecordClient>();
     private String recordName;
+    private PVStructure pvStructure;
     private BasePVRecordStructure pvRecordStructure = null;
     private LinkedList<PVListener> pvAllListenerList = listenerListCreate.create();
     private LinkedList<PVRecordClient> clientList = clientListCreate.create();
@@ -47,7 +48,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
 
     private PVTimeStamp pvTimeStamp = PVTimeStampFactory.create();
     private TimeStamp timeStamp = TimeStampFactory.create();
-
+    private boolean isDestroyed = false;
     // following only valid while addListener or removeListener is active.
     private boolean isAddListener = false;
     private PVListener pvListener = null;
@@ -64,9 +65,44 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
             throw new IllegalStateException(recordName + " pvStructure not a top level structure");
         }
         this.recordName = recordName;
+        this.pvStructure = pvStructure;
         pvRecordStructure = new BasePVRecordStructure(pvStructure,null,this);
-        PVField pvField = pvRecordStructure.getPVStructure().getSubField("timeStamp");
+        PVField pvField = pvStructure.getSubField("timeStamp");
         if(pvField!=null) pvTimeStamp.attach(pvField);
+    }
+    /**
+     *  Destroy the PVRecord. Release any resources used and
+     *  get rid of listeners and requesters.
+     *  If derived class overrides this then it must call super.destroy()
+     *  after it has destroyed resources it uses.
+     */
+    public void destroy()
+    {
+        if(traceLevel>0) {
+            System.out.println("PVRecord::destroy() " + recordName);
+        }
+        lock.lock();
+        try {
+            if(isDestroyed) return;
+            isDestroyed = true;
+        } finally {
+            lock.unlock();
+        }
+        pvTimeStamp.detach();
+        PVDatabase pvDatabase = PVDatabaseFactory.getMaster();
+        if(pvDatabase!=null) pvDatabase.removeRecord(this);
+        while(true) {
+            LinkedListNode<PVListener> listNode = pvAllListenerList.removeHead();
+            if(listNode==null) break;
+            PVListener listener = listNode.getObject();
+            listener.unlisten(this);
+        }
+        while(true) {
+            LinkedListNode<PVRecordClient> listNode = clientList.removeHead();
+            if(listNode==null) break;
+            PVRecordClient pvRecordClient = listNode.getObject();
+            pvRecordClient.detach(this);
+        }
     }
     /**
      *  A derived method is expected to override this method and can also call this method.
@@ -85,19 +121,6 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
         }
     }
     /**
-     *  Destroy the PVRecord. Release any resources used and
-     *  get rid of listeners.
-     *  If derived class overrides this then it must call PVRecord::destroy()
-     *  after it has destroyed resources it uses.
-     */
-    public void destroy()
-    {
-        if(traceLevel>1) {
-            System.out.println("PVRecord::destroy() " + recordName);
-        }
-        pvTimeStamp.detach();
-    }
-    /**
      * Get the record instance name.
      * @return The name.
      */
@@ -110,6 +133,14 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
      */
     public final PVRecordStructure getPVRecordStructure() {
         return pvRecordStructure;
+    }
+    /**
+     *  Convenience method for derived classes.
+     * @return The top level PVStructure.
+     */
+    public final PVStructure getPVStructure()
+    {
+        return pvStructure;
     }
     /**
      * Find the PVRecordField for the pvField.
@@ -195,13 +226,17 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
      *  @return (false,true) means (failure,success)
      */
     public final boolean addPVRecordClient(PVRecordClient pvRecordClient) {
-        if(traceLevel>2) {
+        if(traceLevel>1) {
             System.out.println("PVRecord::addPVRecordClient() " + recordName);
         }
         lock.lock();
         try {
+            if(isDestroyed) return false;
             if(clientList.contains(pvRecordClient)) return false;
             LinkedListNode<PVRecordClient> listNode = clientListCreate.createNode(pvRecordClient);
+            if(traceLevel>1) {
+                System.out.println("PVRecord::addPVRecordClient() calling clientList.push_back(pvRecordClient)");
+            }
             clientList.addTail(listNode);
             return true;
         } finally {
@@ -215,33 +250,15 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
      *  @return (false,true) means (failure,success)
      */
     public final boolean removePVRecordClient(PVRecordClient pvRecordClient) {
-        if(traceLevel>2) {
+        if(traceLevel>1) {
             System.out.println("PVRecord::removePVRecordClient() " + recordName);
         }
         lock.lock();
         try {
+            if(isDestroyed) return false;
             if(!clientList.contains(pvRecordClient)) return false;
             clientList.remove(pvRecordClient);
             return true;
-        } finally {
-            lock.unlock();
-        }
-    }
-    /**
-     * Detach all registered clients.
-     */
-    public final void detachClients() {
-        if(traceLevel>1) {
-            System.out.println("PVRecord::detachClients() " + recordName);
-        }
-        lock.lock();
-        try {
-            while(true) {
-                LinkedListNode<PVRecordClient> listNode = clientList.removeHead();
-                if(listNode==null) break;
-                PVRecordClient pvRecordClient = listNode.getObject();
-                pvRecordClient.detach(this);
-            }
         } finally {
             lock.unlock();
         }
@@ -258,6 +275,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
         }
         lock.lock();
         try {
+            if(isDestroyed) return false;
             if(pvAllListenerList.contains(listener)) return false;
             LinkedListNode<PVListener> listNode = listenerListCreate.createNode(listener);
             pvAllListenerList.addTail(listNode);
@@ -293,6 +311,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
         }
         lock.lock();
         try {
+            if(isDestroyed) return false;
             if(!pvAllListenerList.contains(listener)) return false;
             pvAllListenerList.remove(listener);
             this.pvListener = listener;
@@ -370,7 +389,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
         builder.append("record ");
         builder.append(recordName);
         builder.append(" ");
-        pvRecordStructure.getPVStructure().toString(builder, indentLevel);
+        pvStructure.toString(builder, indentLevel);
         return builder.toString();
     }  
     /* (non-Javadoc)
