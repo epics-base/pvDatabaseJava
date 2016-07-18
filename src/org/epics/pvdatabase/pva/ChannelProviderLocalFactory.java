@@ -5,10 +5,10 @@
 package org.epics.pvdatabase.pva;
 
 /**
- * A ChannelProvider for PVDatabase.
+ * Factory to create ChannelProviderLocal.
+ * It also implements ChannelProviderLocal.
  * @author mrk
- * 2015.01.20
- *
+ * @since 2015.01.20
  */
 
 import java.util.Arrays;
@@ -75,8 +75,8 @@ import org.epics.pvdatabase.PVRecord;
 import org.epics.pvdatabase.PVRecordClient;
 
 /**
- * Factory and implementation of local channel access, i.e. channel access that
- * accesses database records in the local pvDatabase..
+ * Factory and implementation of channel provider <b>local</b>.
+ * It accesses PVRecords in the local PVDatabase.
  * User callbacks are called with the appropriate record locked except for
  * 1) all methods of ChannelRequester, 2) all methods of ChannelFieldGroupListener,
  * and 3) ChannelRequester.requestDone
@@ -94,7 +94,7 @@ public class ChannelProviderLocalFactory  {
         return getChannelProviderLocal();
     }
     /**
-     * Get the single instance of the local channelProvider for the PVDatabase.
+     * Get the single instance of channel provider <b>local</b>.
      * @return The ChannelProvider
      */
     static public ChannelProvider getChannelProviderLocal() {

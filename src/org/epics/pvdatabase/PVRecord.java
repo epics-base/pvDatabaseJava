@@ -26,10 +26,10 @@ import org.epics.pvdata.pv.Type;
 
 
 /**
- * Base class for a pvDatabase PVRecord.
+ * Base class for a  PVRecord.
  * Derived classes only need to implement a constructor and optionally process and destroy.
  * @author mrk
- *  2015.01.20
+ * @since 2015.01.20
  */
 public class PVRecord implements PVCopyTraverseMasterCallback {
     private static final Convert convert = ConvertFactory.getConvert();
@@ -365,12 +365,12 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
         }
     }
     /**
-     * get trace level (0,1,2) means (nothing,lifetime,process)
+     * Get trace level: (0,1,2) means (nothing,lifetime,process)
      * @return the level
      */
     public final int getTraceLevel(){ return traceLevel;}
     /**
-     * set trace level (0,1,2) means (nothing,lifetime,process)
+     * Set trace level: (0,1,2) means (nothing,lifetime,process)
      * @param level The level
      */
     public final void setTraceLevel(int level) { traceLevel = level;}

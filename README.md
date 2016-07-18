@@ -12,16 +12,11 @@ Building
 Examples
 ------------
 
-The examples require the database in pvaClientTestCPP.
-For example:
-
-    mrk> pwd
-    /home/epicsv4/pvaClientTestCPP/database/iocBoot/exampleDatabase
-    mrk> ../../bin/linux-x86_64/exampleDatabase st.cmd 
+Examples are available in exampleJava.
 
 Status
 ------
 
-* The API is for EPICS Version 4 release 4.5.0
+* The API is for EPICS Version 4 release 4.6.0
 
 

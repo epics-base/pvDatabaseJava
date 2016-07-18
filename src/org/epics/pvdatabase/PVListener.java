@@ -6,10 +6,9 @@
 package org.epics.pvdatabase;
 
 /**
- * DB listener interface.
+ * Callback for changes to a PVRecord.
  * @author mrk
- * 2015.01.20
- *
+ * @since 2015.01.20
  */
 public interface PVListener {
     /**
