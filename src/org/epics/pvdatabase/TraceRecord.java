@@ -20,6 +20,14 @@ import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.ScalarType;
 import org.epics.pvdata.pv.Structure;
 
+/**
+ * Set the trace level for another record in the same database.
+ * It is meant to be used via a channelPutGet request.
+ * The argument has two fields: recordName, and level.
+ * The result has a field named status.
+ * @author mrk
+ * @since 2016.07
+ */
 public class TraceRecord extends PVRecord {
     PVDatabase pvDatabase;
     PVString pvRecordName;

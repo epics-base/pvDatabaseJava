@@ -19,6 +19,14 @@ import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.ScalarType;
 import org.epics.pvdata.pv.Structure;
 
+/**
+ * Remove another record in the same database.
+ * It is meant to be used via a channelPutGet request.
+ * The argument has one field: recordName. The result has a field named status.
+ * @author mrk
+ * @since 2016.07
+ *
+ */
 public class RemoveRecord extends PVRecord {
     PVDatabase pvDatabase;
     PVString pvRecordName;

@@ -36,7 +36,7 @@
 
 <div class="head">
 <h1>pvDatabaseJava</h1>
-<h2 class="nocount">Release 4.2-DEV - 2016.03.21</h2>
+<h2 class="nocount">Release 4.2-DEV - 2016.07.14</h2>
 
 
 <h2 class="nocount">Abstract</h2>
@@ -61,381 +61,102 @@ The minimum that an extension must provide is a top level PVStructure and a proc
 </div>
 <div id="contents" class="contents">
 
-
-<h2>Introduction</h2>
-<h3>Overview</h3>
-<p>The main purpose of this project to make it easier to implement services that are accessed via pvAccess.
+<h2>Overview</h2>
+<p>
+pvDatabaseJava is one of the components of 
+<a href="http://epics-pvdata.sourceforge.net">
+EPICS Version 4
+</a>
+</p>
+<p>This document is only a guide to help locate code and documentation related to pvDatabaseJava
 </p>
 <p>
-This project supplies a complete implementation of the server side of pvAccess,
-which has the provider name <b>local</b>.
+It is intended for developers that want to use pvDatabaseJava.
+</p>
+<h2>Developer Guide</h2>
+<p>A guide for developers is available at
+<a
+href="http://epics-pvdata.sourceforge.net/informative/developerGuide/developerGuide.html">
+developerGuide
+</a>
+</p>
+<p>This guide discusses all the components that are part of an <b>EPICS V4</b> release.
+Some understanding of the components and how they are related is necessary in order to
+develop code that uses pvDatabaseJava.
+In particular read everything related to pvDatabase.
+</p>
+<p>The developerGuide discusses code in a way that applies to both Java and C++.
+For the descriptions of the Java specific code consult the next section.
 </p>
 
-<p>The main purpose of this project to make it easier to implement services that are accessed via pvAccess.
-This project supplies a complete implementation of the server side of pvAccess.
-All that a service has to provide is a top level PVStructure and a process method.
+<h2>JavaDoc</h2>
+<p>Javadoc documentation is available at
+<a
+href="../target/apidocs/index.html">javaDoc</a>
 </p>
 
-<p>A brief description of a pvDatabase is that it is a set of network accessible, smart,
-memory resident records.
-Each record has data composed of a top level PVStructure.
-Each record has a name which is the channelName for pvAccess.
-A local Channel Provider implements the complete ChannelProvider and
-Channel interfaces as defined by pvAccess.
-The local provider provides access to the records in the pvDatabase.
-This local provider is accessed by the remote pvAccess server.
-A record is smart because code can be attached to a record, which is accessed via a method named process.</p>
-
-<p>This document describes components that provide the following features:</p>
+<h2>pvDatabaseJava</h2>
+<p>pvDatabaseJava itself has the following implementations of a <b>PVRecord</b></p>
 <dl>
-  <dt>pvdatabase</dt>
-     <dd>This encapsulates the concept of a database of memory resident smart records.
-        The two main components are:
-       <dl>
-          <dt>PVRecord</dt>
-             <dd>This encapsulates the concept of a smart record. It can be processed.
-             Changes to field values can be trapped. A record can be locked.</dd>
-          <dt>PVDatabase</dt>
-              <dd>This is a database of pvRecords.
-               Records can be added and removed from a database.</dd>
-       </dl>
-     </dd>
-  <dt>pva</dt>
-     <dd>This is a complete implementation of ChannelProvider and Channel
-       as defined by pvAccess.
-       It provides pvAccess for PVRecords.
-       </dd>
-</dl>
-<p>PVRecord is a base class that makes it easy to create record instances.
-Given a PVStructure, the PVRecord constructor can be called to create a new PVRecord
-instance.
-If the structure has a timeStamp field then the base class process routine
-sets the timeStamp to the current time.
-Otherwise process does nothing.
-</p>
-<p>
-Server code can extend the base class.
-It should provide a static create method that creates the top level
-PVStructure and creates a new PVRecord
-that extends PVRecord.
-It can  override the following methods:</p>
-<dl>
-  <dt>Constructor</dt>
-    <dd>A derived class constructor must call the base class constructor.</dd>
-  <dt>process</dt>
-    <dd>This is what makes a record smart.
-      The base class just looks for a timeStamp field and if it exists
-      it is set equal to the current time.
-     A derived class can do what it wants.
-     </dd>
-  <dt>destroy</dt>
-     <dd>This releases any resources used by the implementation.
-     </dd>
-</dl>
-<h3>Getting started</h3>
-<p>A separate project <b>exampleJava</b> has examples for <b>pvDatabaseJava</b>
-and for <b>pvaClientJava</b>.
-See it for examples.
-</p>
-<h3>SimpleExample</h3>
-<p>This is an example that creates PVRecords, adds them to the database,
-and starts pvAccess all in a single source file.</p>
-<p>Three examples of extending PVRecord are shown:</p>
-<dl>
-   <dt>PassiveScalarRecord</dt>
-     <dd>This overides neither process or destroy.
-      The only difference from directly calling the base class constructor
-      is that a static create method is provided.
+    <dt>RemoveRecord.java</dt>
+      <dd>
+         This is the code that is used to delete another record in the same <b>IOC</b>.
       </dd>
-   <dt>ScanPVRecord</dt>
-      <dd>This is an example that periodically makes the record process.
-       Since process is not overriden only the timeStamp will update
-       unless a client changes it.
+    <dt>TraceRecord.java</dt>
+      <dd>
+         This is the code that is used to set the trace level
+         in another record in the same <b>IOC</b>.
       </dd>
-   <dt>CounterRecord</dt>
-      <dd>This increments value each time the record is processed.</dd>
 </dl>
-<p>The main program creates a record of each type, adds each record to the
-database, and starts the pvAccess server.
+<h2>exampleJava</h2>
+<p>Example code is available as part of this release.
+<a
+href="http://epics-pvdata.sourceforge.net/docbuild/exampleJava/tip/documentation/exampleJava.html">
+exampleJava
+</a>
 </p>
-<pre>
-public class SimpleExample {
-
-    static class PassiveScalarRecord extends PVRecord
-    {
-        static PassiveScalarRecord create(
-                String recordName,
-                ScalarType scalarType,
-                String properties)
-        {
-            return new PassiveScalarRecord(
-                    recordName,
-                    StandardPVFieldFactory.getStandardPVField().scalar(
-                            scalarType, properties)
-                    );
-        }
-
-        private PassiveScalarRecord(
-                String recordName,
-                PVStructure pvStructure)
-        {
-            super(recordName, pvStructure);
-        }
-    }
-
-    static class ScanPVRecord extends PVRecord implements TimerCallback 
-    {
-        private static Timer timer = TimerFactory.create(
-                "ScanPVRecord-timer",
-                ThreadPriority.middle);
-        private final TimerNode timerNode = TimerFactory.createNode(this);
-
-        ScanPVRecord(
-                String recordName,
-                PVStructure pvStructure,double period)
-                {
-            super(recordName, pvStructure);
-            timer.schedulePeriodic(timerNode, 0, period);
-                }
-
-        public void destroy() {
-            timerNode.cancel();
-            super.destroy();
-        }
-
-        public void callback() {
-            lock();
-            try {
-                beginGroupPut();
-                process();
-                endGroupPut();
-            } finally {
-                unlock();
-            }
-        }
-
-        public void timerStopped() {
-            // noop
-        }
-    }
-
-    // 1Hz 32-bit counter
-    static class CounterRecord extends ScanPVRecord
-    {
-        static CounterRecord create(String recordName)
-        {
-            return new CounterRecord(
-                    recordName,
-                    StandardPVFieldFactory.getStandardPVField().scalar(
-                            ScalarType.pvInt,
-                            "timeStamp"));
-        }
-
-        private final PVInt value;
-
-        private CounterRecord(String recordName, PVStructure pvStructure) {
-            super(recordName, pvStructure, 1.0);
-            value = pvStructure.getIntField("value");
-        }
-
-        public void process() {
-            // increment value
-            value.put(value.get() + 1);
-            // update timeStamp
-            super.process();
-        }
-    }
-
-    public static void main(String[] args)
-    {
-        PVDatabase master = PVDatabaseFactory.getMaster();
-        master.addRecord(PassiveScalarRecord.create(
-                "testScalar",
-                ScalarType.pvInt,
-                "timeStamp"));
-        master.addRecord(new ScanPVRecord(
-                "testScan",
-                StandardPVFieldFactory.getStandardPVField().scalar(
-                        ScalarType.pvString,
-                        "timeStamp"),
-                        1.0));
-        master.addRecord(CounterRecord.create("testCounter"));
-
-        ContextLocal context = new ContextLocal();
-        context.start(true);
-    }
-}
-</pre>
-
-<h2>Guidelines For Developing PVRecords</h2>
-<h3>Client Driven Records</h3>
-<p>This means that process is called by clients not by the service itself.</p>
-<p>The PVRecord base class can be used to create records
-that can driven entirely by client except for setting a value
-for the timeStamp.
-The ExampleDatabase shows how to construct such records.
+<p>In particular look at the example code mentioned in the following sub-sections.
 </p>
-<p>The following is an example record meant to be accessed via channelPutGet.
-</p>
-<pre>
-public class HelloRecord extends PVRecord {
-    private static final FieldCreate fieldCreate
-        = FieldFactory.getFieldCreate();
-    private static final PVDataCreate pvDataCreate
-        = PVDataFactory.getPVDataCreate();
-    private static final StandardField standardField
-        = StandardFieldFactory.getStandardField();
-    
-    private PVString arg;
-    private PVString result;
 
-    public static PVRecord create(String recordName)
-    {
-        FieldBuilder fb = fieldCreate.createFieldBuilder();
-        Structure structure = 
-            fb.addNestedStructure("argument").
-                add("value",ScalarType.pvString).
-                endNested().
-            addNestedStructure("result").
-                add("value",ScalarType.pvString).
-                endNested().
-            add("timeStamp",standardField.timeStamp()).
-            createStructure();
-       PVRecord pvRecord = new HelloRecord(
-            recordName,pvDataCreate.createPVStructure(structure));
-       PVDatabase master = PVDatabaseFactory.getMaster();
-       master.addRecord(pvRecord);
-       return pvRecord;
-    }
-    public HelloRecord(String recordName,PVStructure pvStructure) {
-        super(recordName,pvStructure);
-        arg = pvStructure.getSubField(PVString.class, "argument.value");
-        if(arg==null) throw new IllegalArgumentException("arg not found");
-        result = pvStructure.getSubField(PVString.class, "result.value");
-        if(result==null) throw
-            new IllegalArgumentException("result not found");
-        
-    }
-    
-    public void process()
-    {
-        int level = getTraceLevel();
-        if(levels&gt;1) System.out.println("HelloRecord::process");
-        result.put("Hello " +arg.get());
-        super.process();
-    }
-}
-</pre>
-<h3>Service Driven Records</h3>
-<p>This means that the service calls process because it is the data source.</p>
-<p>The following is an example.</p>
-<pre>
-public class ArrayServerRecord extends PVRecord implements Runnable {
-    private static final StandardPVField standardPVFields
-         = StandardPVFieldFactory.getStandardPVField();
-    private PVDoubleArray pvValue = null;
-    private double[] value;
-    private Thread thread;
-    private int arraySize;
-    private long waitTime;
-    private double elementValue = 0.0;
-
-    public static PVRecord create(
-         String recordName,
-         int arraySize,
-         double waitSecs)
-    {
-        PVStructure pvStructure = standardPVField.scalarArray(i
-            ScalarType.pvDouble, "alarm,timeStamp");
-        PVRecord pvRecord = new ArrayServerRecord(
-            recordName,pvStructure,arraySize,waitSecs);
-        PVDatabase master = PVDatabaseFactory.getMaster();
-        master.addRecord(pvRecord);
-        return pvRecord;
-    }
-    public ArrayServerRecord(
-        String recordName,
-        PVStructure pvStructure,
-        int arraySize,
-        double waitSecs)
-    {
-
-        super(recordName,pvStructure);
-        this.arraySize = arraySize;
-        waitTime = (long)(waitSecs*1000.0);
-        pvValue = pvStructure.getSubField(PVDoubleArray.class, "value");
-        if(pvValue==null) throw new IllegalArgumentException("value not found");
-        value = new double[arraySize];
-        thread = new Thread(this,"ArrayServerReord");
-        thread.start();
-    }
-
-    public void process()
-    {
-        pvValue.put(0, value.length, value, 0);
-        super.process();
-    }
-
-    public void run() {
-        while(true) {
-            try {
-                Thread.sleep(waitTime);
-            } catch (Throwable th) {
-                th.printStackTrace();
-            }
-            value = new double[arraySize];
-            for(int i=0; i&lt;arraySize; i++) value[i] = elementValue + i;
-            ++elementValue;
-            lock();
-            try {
-                beginGroupPut();
-                process();
-                endGroupPut();
-            } finally {
-                unlock();
-            }
-        }
-    }
-}
-</pre>
-<h2>org.epics.pvdatabase</h2>
-<p>This Package has the following files:</p>
-<dl>
-   <dt>PVDatabase</dt>
+<h3>database</h3>
+<p>This has many examples of how to create both soft records and records that implement
+other functionality.</p>
+<dl> 
+   <dt>ExampleDatabase.java</dt>
      <dd>
-      Interface for a pvdatabase.
+      This shows how to create soft records of each pvData type.<br />
+      In addition shows how to create instances of the following two records.
      </dd>
-   <dt>PVRecord</dt>
+   <dt>ExampleHelloRecord.java</dt>
      <dd>
-       The base class for PVRecord.
+       This is a simple "hello world" that is intentended to be used via a channelPutGet request.
      </dd>
-   <dt>PVDatabaseFactory</dt>
-     <dd>A factory for a pvdatabase.</dd>
-   <dt>PVListener</dt>
-     <dd>Interface for code that listens for changes to fields.</dd>
-   <dt>PVRecordClient</dt>
-     <dd>Interface for code that accesses a PVRecord</dd>
-   <dt>PVRecordField</dt>
-     <dd>Interface that connects a PVField to a PVRecord</dd>
-   <dt>PVRecordStructure</dt>
-     <dd>Interface that connects a PVStructure to a PVRecord</dd>
+   <dt>ExampleHelloRPC.java</dt>
+     <dd>
+       This is a simple "hello world" that is intentended to be used via a channelRPC request.
+     </dd>
 </dl>
-
-<h2>org.epics.pvdatabase.pva</h2>
-<p>This is code that provides an implementation of channelProvider as
-defined by pvAccess.
-It provides access to PVRecords and is accessed by the server side of remote pvAccess.
-It uses the copy and monitor facilities from pvDataJava and connects
-them to a PVRecord.
-</p>
-<p>The implementation is a complete implementation of channelProvider
-and channel except for channelRPC, which is implement by pvAccess as a separate
-channel provider.</p>
-<p>
-It is not of interest to client or service implementers.
-See the JavaDoc for details.
-</p>
-
+<h3>exampleLink</h3>
+<p>This shows how to implement a record that has a link to another record</p>
+<dl> 
+  <dt>ExampleMonitorLinkRecord</dt>
+     <dd>
+      This creates a monitor link to another record.
+     </dd>
+  <dt>ExampleGetLinkRecord</dt>
+     <dd>
+      This creates a get link to another record.
+     </dd>
+  <dt>ExamplePutLinkRecord</dt>
+     <dd>
+      This creates a put link to another record.
+     </dd>
+  <dt>ExamplLinkMain</dt>
+     <dd>
+       This starts an IOC that has an instance of each of the above records.
+       It has options to also create the linked record or allow it to be in another IOC.
+     </dd>
+</dl>
 </div>
 </body>
 </html>

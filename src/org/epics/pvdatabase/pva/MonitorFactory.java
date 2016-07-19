@@ -32,8 +32,9 @@ import org.epics.pvdatabase.PVRecordField;
 import org.epics.pvdatabase.PVRecordStructure;
 
 /**
+ * Creates a monitor for a PVRecord.
  * @author mrk
- * 2015.01
+ * @since 2015.01
  */
 public class MonitorFactory {
 

@@ -5,12 +5,10 @@
  */
 package org.epics.pvdatabase;
 
-
-
 /**
  * Memory resident database of PVRecords.
  * @author mrk
- * 2015.01.20
+ * @since 2015.01.20
  *
  */
 public interface PVDatabase {

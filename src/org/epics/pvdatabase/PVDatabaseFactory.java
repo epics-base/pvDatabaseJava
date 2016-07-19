@@ -8,9 +8,10 @@
 package org.epics.pvdatabase;
 
 /**
- * Memory resident database of PVRecords.
+ * Get the master PVDatabase.
+ * This is what clients access.
  * @author mrk
- * 2015.01.20
+ * @since 2015.01.20
  *
  */
 

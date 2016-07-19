@@ -2,6 +2,9 @@
 EPICS V4 release 4.6
 ==========================
 
+* The examples are moved to exampleCPP.
+* Support for channelRPC is now available.
+* removeRecord and traceRecord are now available.
 
 
 EPICS V4 release 4.5
