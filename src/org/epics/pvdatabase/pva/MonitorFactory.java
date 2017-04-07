@@ -202,9 +202,10 @@ public class MonitorFactory {
             }
             synchronized(queue) {
                 if(state!=MonitorState.active) return;
+                pvCopy.updateCopyFromBitSet(activeElement.getPVStructure(), activeElement.getChangedBitSet());
+                if(activeElement.getChangedBitSet().nextSetBit(0)<0) return;
                 MonitorElement newActive = queue.getFree();
                 if(newActive==null) return;
-                pvCopy.updateCopyFromBitSet(activeElement.getPVStructure(), activeElement.getChangedBitSet());
                 bitSetUtil.compress(activeElement.getChangedBitSet(),activeElement.getPVStructure());
                 bitSetUtil.compress(activeElement.getOverrunBitSet(),activeElement.getPVStructure());
                 queue.setUsed(activeElement);
