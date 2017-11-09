@@ -116,6 +116,7 @@ public class PVRecord implements PVCopyTraverseMasterCallback {
             System.out.println("PVRecord::process() " + recordName);
         }
         if(pvTimeStamp.isAttached()) {
+            pvTimeStamp.get(timeStamp);
             timeStamp.getCurrentTime();
             pvTimeStamp.set(timeStamp);
         }
