@@ -4,11 +4,11 @@
     <parent>
         <groupId>org.epics</groupId>
         <artifactId>epics-parent</artifactId>
-        <version>7.0.1-SNAPSHOT</version>
+        <version>7.0.1</version>
     </parent>
 
     <artifactId>epics-pvdatabase</artifactId>
-    <version>4.3.1-SNAPSHOT</version>
+    <version>4.3.1</version>
 
     <name>pvDatabaseJava</name>
     <url>https://github.com/epics-base/pvDatabaseJava</url>
@@ -16,7 +16,7 @@
     	<url>https://github.com/epics-base/pvDatabaseJava</url>
     	<connection>scm:git:https://github.com/epics-base/pvDatabaseJava</connection>
     	<developerConnection>scm:git:https://github.com/epics-base/pvDatabaseJava</developerConnection>
-      <tag>HEAD</tag>
+      <tag>4.3.1</tag>
   </scm>
 
     <!-- Explicitly declare snapshot repository -->
